@@ -151,7 +151,7 @@ def shape_fusion_delta(
     beta: float = 1.0,
     gating: bool = False,
     entropy_threshold: float = 0.65,
-    lambda_lm: float = 1.5,
+    lambda_lm: float = 4.0,
 ) -> dict[str, float]:
     """Compare LM-only and LM plus shape top-1 over finite in-pool occurrences."""
     from common.scoring import fuse, zpool

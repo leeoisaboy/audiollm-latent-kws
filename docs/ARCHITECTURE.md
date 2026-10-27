@@ -18,7 +18,8 @@
   centering is the validated real-corpus setting
 - Candidate pool: `20`
 - Grid-snapping tolerance: `6` reading frames
-- LM fusion weight: `1.5`
+- LM fusion weight: `4.0`; the validated plateau is `4.0` to `4.75`. The old
+  `1.5` was inherited from an earlier experiment and was not tuned.
 
 The deployable reranking arms are A, P, X, S, and C; C is the default. O and T
 require transcript timestamps and exist only to expose the remaining headroom.
@@ -49,12 +50,13 @@ Real-corpus outcome (see `docs/REAL_CORPUS_RESULTS.md`):
 | --- | --- |
 | k8 + mean centering | speaker-disjoint CV +3.70 Top-1 points |
 | duration-adaptive / grow-span | no gain over k8+center |
-| multi-prototype / NMS Top-2 | no significant gain |
+| multi-prototype | no gain; Top-2 NMS becomes positive at LM weight 4.0 but trails phonetic snapping |
 | ABTT / PCA whitening | large pool-recall loss |
 | layer late fusion | no gain over `llm2` |
-| phonetic snap | +0.46 point over recomputed C |
+| phonetic snap | +0.80 point over recomputed C at LM weight 4.0 |
+| LM weight 1.5 -> 4.0 | +1.05 point on the same recomputed runner; nested CV +0.80 |
 | PMI calibration | negative at gamma >= 0.75 |
-| DTW-gated shape | positive on LM-only, negative on deployable fusion |
+| DTW-gated shape | positive on LM-only; zero within noise at LM weight 4.0, no deployable gain |
 
 ## KV-cache protocol
 

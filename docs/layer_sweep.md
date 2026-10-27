@@ -22,10 +22,10 @@ and 8 with a 20 s duration limit.
 Layer 0 is the best layer on this probe: it reaches full Top-20 recall and has
 the lowest inter/intra ratio. Layer 8 also reaches full recall but has the
 weakest template separability. Layer 2, the historical Stage-1 setting, loses
-one of 24 occurrences and ranks behind layer 0 on both metrics. The production
-default should therefore not be changed on this small probe alone; use layer 0
-as the current layer-sweep winner and rerun the sweep on the full split before
-switching the locator default.
+one of 24 occurrences and ranks behind layer 0 on both metrics. The deployment
+default should therefore not be changed on this small probe alone. Layer 0 is
+the current probe winner and the first candidate for a full-split rerun, not a
+failed candidate that has been replaced by layer 2.
 
 ## Full-split follow-up (2026-10-27)
 
@@ -42,7 +42,8 @@ level, with enrollment-only mean centering:
 | `llm2:0.7 + llm6:0.3` | 0.9396 |
 | `llm1:0.5 + llm2:0.3 + llm6:0.2` | 0.9371 |
 
-`llm2` remains the production default. The small-probe preference for layer 0
-did not transfer to a clear full-split late-fusion win, so reports should not
-claim a layer-0 improvement without re-extracting and evaluating layer 0 on the
-full corpus.
+`llm2` remains the deployable default because it is the only layer with a full
+2031-utterance result. The full split has not exported layer 0, so this is an
+evidence-level distinction rather than a measured loss for layer 0. Reports
+should not claim a layer-0 improvement until the full features are extracted
+and evaluated on the same candidate pool.

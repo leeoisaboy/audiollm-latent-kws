@@ -19,7 +19,11 @@ def zpool(values) -> np.ndarray:
 
 
 def fuse(acoustic, language_model, lambda_lm: float = LAMBDA_LM) -> np.ndarray:
-    """Return ``z_pool(acoustic) + lambda_lm * z_pool(language_model)``."""
+    """Return ``z_pool(acoustic) + lambda_lm * z_pool(language_model)``.
+
+    The default is the validated real-corpus plateau value. It is an LM weight,
+    not an acoustic weight; the acoustic coefficient is fixed at one.
+    """
     return zpool(acoustic) + lambda_lm * zpool(language_model)
 
 

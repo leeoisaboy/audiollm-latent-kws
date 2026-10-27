@@ -324,7 +324,7 @@ def build_parser() -> argparse.ArgumentParser:
     fuse.add_argument("--pool", required=True)
     fuse.add_argument("--lm", required=True)
     fuse.add_argument("--variant", default="C")
-    fuse.add_argument("--lambda-lm", type=float, default=1.5)
+    fuse.add_argument("--lambda-lm", type=float, default=4.0)
     fuse.add_argument("--calibration", choices=("none", "pmi"), default="none")
     fuse.add_argument("--gamma", type=float, default=1.0)
     fuse.add_argument("--pool-top", type=int, default=20)
@@ -337,7 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
     shape.add_argument("--beta", type=float, default=1.0)
     shape.add_argument("--gating", action="store_true")
     shape.add_argument("--entropy-threshold", type=float, default=0.65)
-    shape.add_argument("--lambda-lm", type=float, default=1.5)
+    shape.add_argument("--lambda-lm", type=float, default=4.0)
     shape.add_argument("--output", required=True)
     shape.set_defaults(handler=command_shape)
     return parser

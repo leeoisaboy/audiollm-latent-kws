@@ -34,7 +34,7 @@ def score_records(
     pool_rows,
     lm_rows,
     variant: str,
-    lambda_lm: float = 1.5,
+    lambda_lm: float = 4.0,
     pool_top: int = 20,
     calibration: str = "none",
     gamma: float = 1.0,

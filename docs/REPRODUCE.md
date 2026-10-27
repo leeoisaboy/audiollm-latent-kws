@@ -21,8 +21,9 @@
    candidate token count is small.
 7. Score A/P/X/S/C for deployable results; add O/T only behind an explicit
    evaluation-only flag.
-8. Fuse with `z_pool(acoustic) + 1.5 z_pool(LM)` and report both occurrence and
-   per-word Top-1.
+8. Fuse with `z_pool(acoustic) + 4.0 z_pool(LM)` and report both occurrence and
+   per-word Top-1. The validated plateau is 4.0 to 4.75; `1.5` was an inherited
+   value, not a tuned optimum.
 9. Run `cli.py audit` and publish the prefix-pollution table next to accuracy.
 10. For the shape ablation, export aligned candidate columns (`lm_C`, `d1`,
     `res`, `vel`) and run `cli.py analyze-shape`; do not enable shape for
@@ -43,7 +44,7 @@
 13. For shape, report fixed-weight and entropy-gated results side by side,
     including gate rate and mean LM entropy; never tune the gate on test labels.
     Use `scripts/shape_gate_cv.py --group speaker` on both the LM-only and the
-    deployable `acoustic + 1.5 LM` baselines. A gain on the former does not
+    deployable `acoustic + 4.0 LM` baselines. A gain on the former does not
     establish an end-to-end gain.
 14. For KV-cache claims, report warm-run medians, peak extra memory, max score
     difference and Top-1 agreement together. Do not quote speed-ups from a

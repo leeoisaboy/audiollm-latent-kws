@@ -165,7 +165,7 @@ def collect_metrics(
     key: str,
     calibration: str = "none",
     gamma: float = 1.0,
-    lambda_lm: float = 1.5,
+    lambda_lm: float = 4.0,
     pool_top: int = 20,
 ) -> tuple[dict, list[tuple[str, float]]]:
     correct_by_utt: dict[str, list[float]] = collections.defaultdict(list)
@@ -288,7 +288,7 @@ def main() -> int:
     parser.add_argument("--pool-top", type=int, default=20)
     parser.add_argument("--alt-count", type=int, default=2)
     parser.add_argument("--alt-radius", type=int, default=2)
-    parser.add_argument("--lambda-lm", type=float, default=1.5)
+    parser.add_argument("--lambda-lm", type=float, default=4.0)
     parser.add_argument("--report", default="reports/stage2_real_ablation.json")
     parser.add_argument("--raw-output", default="reports/stage2_real_lm.jsonl")
     args = parser.parse_args()

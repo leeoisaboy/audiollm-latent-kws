@@ -190,7 +190,7 @@ def main() -> int:
     parser.add_argument("--shape-file", default="")
     parser.add_argument("--pool-file", default="")
     parser.add_argument("--baseline", choices=("lm", "fused"), default="lm")
-    parser.add_argument("--lambda-lm", type=float, default=1.5)
+    parser.add_argument("--lambda-lm", type=float, default=4.0)
     parser.add_argument("--output", default="reports/shape_gate_cv.json")
     args = parser.parse_args()
 

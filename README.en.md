@@ -19,6 +19,50 @@ Smart-home and assisted-living devices keep meeting new dialect action commands.
 
 The repository implements a reproducible two-stage pipeline. Stage 1 matches mean enrollment templates in an early Audio-LLM latent space and returns a Top-20 candidate pool. Stage 2 puts each candidate back into the frozen model with an aligned language context and reranks the pool by teacher forcing. All model parameters remain frozen. Static character timestamps are consumed as external input. The code keeps both the positive engineering result and the negative findings that constrain future work.
 
+## Recommended configuration, up front
+
+The early design treated `llm2 + C + Z_acoustic + 1.5 Z_LM` as fixed. The value `1.5` was inherited from an older experiment and was never selected on this corpus. It multiplies the language-model term, not the acoustic term; the acoustic coefficient is always one. The best measured combination supported by the current evidence is:
+
+```text
+llm2 · k=8 + mean centering · C + phonetic soft snap · Z_acoustic + 4.0 Z_LM · shape off
+```
+
+This combination reaches **0.5496 occurrence Top-1** and **0.6449 per-word Top-1** on the same candidate pool. Without the optional phonetic dependency, the repository default follows `C` at 0.5416 and 0.6258. The first number is the measured best point estimate; the second is the portable default.
+
+| Stage | Current choice | Direct evidence |
+| --- | --- | --- |
+| Latent layer | `llm2`, 3584-d | Full-split Top-20 pool recall 0.9467; the only layer with full-split validation |
+| Template and window | `k=8` plus enrollment mean centering | 0.9467 pool recall; +3.699 occurrence Top-1 points in speaker-disjoint nested CV |
+| Left-context boundary | `C`, candidate-first-character grid snap | Prefix first-character pollution drops from 35.23% to 3.39%; C is 25.8 points above the wrong-sentence control X |
+| Stage-2 extension | `C` plus phonetic soft snap | +0.801 point over recomputed C at `lambda_LM=4.0`, 95% CI [+0.345, +1.262] |
+| Fusion weight | `Z_acoustic + 4.0 Z_LM` | Stable plateau 4.0 to 4.75; +1.850 points over `C@1.5` on the same recomputed runner, 95% CI [+1.183, +2.546] |
+| Temporal shape | Disabled | -0.033 / -0.233 point in utterance / speaker nested CV at `lambda_LM=4.0`; both CIs cross zero |
+
+Two quantities must be separated here. The acoustic branch is not weakened: the coefficient on `Z_acoustic` remains one. The values `1.5` and `4.0` describe how much relative weight the semantic term receives. In the same Stage-2 recomputation, setting `lambda_LM=0` keeps the acoustic term alone and gives 0.4399 occurrence Top-1. Setting `lambda_LM=4.0` raises it to 0.5416. Setting `lambda_LM=100`, which is effectively LM-only, falls to 0.5324. The acoustic term still contributes, but a weight of 1.5 underestimates the reranking contribution.
+
+With one recomputed runner, `C` moves from 0.5311 at `1.5` to 0.5416 at `4.0`, and `C + phonetic` moves from 0.5358 to 0.5496. The best point estimate reaches **0.5496 occurrence Top-1** and **0.6449 per-word Top-1**.
+
+| `lambda_LM` | C, occurrence | C, word | C + phonetic, occurrence | C + phonetic, word |
+| ---: | ---: | ---: | ---: | ---: |
+| 1.5, old default, unified recomputation | 0.5311 | 0.6182 | 0.5358 | 0.6286 |
+| 2.0 | 0.5367 | 0.6218 | 0.5419 | 0.6358 |
+| 3.0 | 0.5413 | 0.6289 | 0.5478 | 0.6456 |
+| 4.0, current default | 0.5416 | 0.6258 | **0.5496** | **0.6449** |
+| 4.75, sweep peak | 0.5432 | 0.6257 | 0.5499 | 0.6441 |
+
+The `4.75` occurrence estimate is only 0.03 point above `4.0`, while its word-level value is slightly lower. The five utterance-grouped folds selected `4.75, 4.0, 4.75, 4.25, 4.75`; the speaker-grouped folds selected `4.75, 4.75, 4.0, 5.5, 4.0`. Both land on the 4.0 to 4.75 plateau. The repository therefore uses the more conservative `4.0` rather than presenting the sweep peak as a unique optimum. At the higher weight, naive P falls from 0.4538 to 0.4112 while C rises from 0.5311 to 0.5416. The more the semantic term matters, the more expensive a wrong prefix becomes.
+
+### Why layer 0 is not the default yet
+
+Layer 0 is the winner of the layer probe. On 24 occurrences and 64 multi-speaker templates, it reaches 1.0000 Top-20 recall and an inter/intra cosine ratio of 0.4828. `llm2` reaches 0.9583 and 0.5471. The better template separability of layer 0 is real.
+
+| Candidate | Probe recall | Inter/intra | Full split | Current decision |
+| --- | ---: | ---: | --- | --- |
+| Layer 0 | **1.0000** | **0.4828** | Full features not exported | First experiment for the next revision |
+| `llm2` | 0.9583 | 0.5471 | Top-20 recall 0.9467 | Current deployable default |
+
+The full split currently covers only `llm1`, `llm2`, `llm6`, and their late fusion; it has no layer-0 result over 2031 utterances. Promoting a 24-occurrence probe to a full-corpus claim would overstate the evidence. The highest-value next experiment is therefore a full layer-0 export and a controlled rerun on the same candidate pool, not another fusion-weight sweep. The README keeps “probe winner” and “fully validated default” as separate claims. If the question is whether layer 0 separates templates better, the answer is yes. If the question is whether layer 0 is already a better deployable choice than `llm2`, the answer is not yet measured.
+
 ## Why this project exists
 
 Dialect action words are sparse and unevenly distributed. A household may use only a handful of commands such as open the light, close the window, draw the curtain, or set the temperature. Pronunciations also vary across regions and speakers. Training a dedicated model for each home, dialect, and command does not scale.
@@ -35,14 +79,15 @@ The project asks three questions.
 
 ## Key findings
 
-| Finding | Main evidence | Consequence |
+| Question | Result | Consequence |
 | --- | --- | --- |
-| Early acoustic retrieval is strong | `k=8` plus enrollment mean centering reaches 0.9467 Top-20 pool recall | A frozen latent space can support high-recall coarse localization |
-| Grid alignment is a major error source | Prefix first-character pollution is 35.23% for a naive cut and 3.39% for grid snapping | Alignment matters more than most parameter tuning |
-| Temporal shape is diagnostic, not deployable | DTW is positive on an LM-only diagnostic baseline and negative on the deployable fusion baseline | Shape tie-breaking stays disabled |
-| Low-VRAM extraction is feasible | NF4 4-bit loading exported six layers on an RTX 4060 Laptop | The prototype can be reproduced on a small GPU |
+| Which layer retrieves best | Layer 0 wins the probe on separability and recall; `llm2` is the only fully validated layer | Keep `llm2` for deployment and make layer 0 the next full-split experiment |
+| Is `1.5` a good weight | It is an inherited value; at one runner, `4.0` adds 1.048 points and phonetic snapping adds another 0.801 | Default changes to `4.0`; report the 4.0 to 4.75 plateau |
+| How much does grid alignment matter | Naive cuts pollute 35.23% of first characters, grid snapping 3.39% | Alignment matters more than most parameter tuning |
+| Does temporal shape complement the LM | It ranks on its own; at `lambda_LM=4.0`, nested CV is -0.033 point with a CI crossing zero | Shape tie-breaking stays disabled |
+| Can a small GPU reproduce the features | NF4 4-bit loading exported six layers on an RTX 4060 Laptop | The prototype runs on low-cost local hardware |
 
-The third row is easy to misread. Temporal shape carries real information, and its standalone ranking is far above chance. The gain disappears after the full acoustic plus LM fusion, and speaker-disjoint cross-validation shows a stable loss. The project keeps this negative result because it directly constrains later multimodal fusion designs.
+The two easy-to-misread rows are layer selection and fusion weight. Better inter-class geometry for layer 0 does not establish a full-split pool-recall win. Likewise, `1.5` is not a physical constant; it was an untuned historical value. This revision separates the two claims and moves them to “awaiting full validation” and “replaced by 4.0”, respectively.
 
 ## Method
 
@@ -62,7 +107,7 @@ flowchart LR
     H["Static character reading<br/>40 ms grid"] --> I[Grid-snapped boundary]
     G --> I
     I --> J["Frozen Audio-LLM<br/>teacher forcing"]
-    J --> K["Fusion score<br/>Z_acoustic + 1.5 Z_LM"]
+    J --> K["Fusion score<br/>Z_acoustic + 4.0 Z_LM"]
     K --> L[Keyword and onset]
 ```
 
@@ -86,15 +131,15 @@ $$
 S_{\mathrm{LM}}(w)=\frac{1}{|\mathrm{tok}(w)|}\sum_t \log P\bigl(\mathrm{tok}(w)_t \mid \text{instruction},\text{audio},\text{prefix}_w,\mathrm{tok}(w)_{<t}\bigr)
 $$
 
-The default C arm finds the nearest occurrence of the candidate first character on the 40 ms reading grid and snaps the acoustic window start to that point. The prefix therefore ends before the first character. Acoustic and LM scores are normalized inside each candidate pool and fused with a fixed weight of 1.5.
+The default C arm finds the nearest occurrence of the candidate first character on the 40 ms reading grid and snaps the acoustic window start to that point. The prefix therefore ends before the first character. Acoustic and LM scores are normalized inside each candidate pool and fused with the validated LM weight of 4.0.
 
 $$
-\mathrm{Score}=Z_{\mathrm{acoustic}}+1.5\,Z_{\mathrm{LM}}
+\mathrm{Score}=Z_{\mathrm{acoustic}}+4.0\,Z_{\mathrm{LM}}
 $$
 
 ## Experimental protocol
 
-The main experiment uses Wu dialect data derived from WenetSpeech-Wu-Bench. It contains 2031 utterances, 3244 keyword occurrences, and 293 words. Features come from a frozen Step-Audio-2-mini checkpoint at `llm2`, with 3584 dimensions per frame and an 80 ms frame shift. The candidate pool is fixed at Top 20. Stage-2 fusion uses a fixed weight of 1.5.
+The main experiment uses Wu dialect data derived from WenetSpeech-Wu-Bench. It contains 2031 utterances, 3244 keyword occurrences, and 293 words. Features come from a frozen Step-Audio-2-mini checkpoint at `llm2`, with 3584 dimensions per frame and an 80 ms frame shift. The candidate pool is fixed at Top 20. Stage-2 uses an LM weight of 4.0, with a stability plateau from 4.0 to 4.75.
 
 Results report occurrence Top-1 and per-word Top-1. Occurrence Top-1 weights every keyword occurrence equally. Per-word Top-1 averages within a word first, then across words. Cross-validation groups by utterance or by the `rec_sXX` session field. Window and calibration choices are made on training folds only. The `rec_sXX` grouping is a heuristic speaker proxy, not an official speaker annotation.
 
@@ -144,7 +189,7 @@ The full split later compared available late-fusion views.
 | `llm2:0.7 + llm6:0.3` | 0.9396 |
 | `llm1:0.5 + llm2:0.3 + llm6:0.2` | 0.9371 |
 
-No layer-fusion view improves on `llm2`, which remains the default. The small-probe advantage of layer 0 has not yet been tested as a full-split layer choice. Changing the default requires a full extraction and a controlled evaluation on the same candidate pool. Current evidence supports keeping `llm2`.
+No existing layer-fusion view improves on `llm2`, which remains the default. This is not a claim that layer 2 beats layer 0; the two rows have different evidence levels. Layer 0 has only the 24-occurrence probe, while its 2031-utterance features have not been exported. The highest-value next experiment is a full layer-0 export and a controlled rerun on the same candidate pool.
 
 ### Seven-arm ablation, time-grid alignment
 
@@ -178,20 +223,20 @@ About one third of P candidates see their own first character in the prefix. The
 
 ### Stage 2, replication and extension branches
 
-All 2031 utterances use the same candidate pool and fusion weight. Historical C and recomputed C differ by about half a point because of the runner. The project reports that gap separately instead of treating it as a gain. The KV-cache path has a separate value-parity audit.
+All 2031 utterances share one candidate pool. The table below is recomputed at `lambda_LM=4.0`; the historical public C at 1.5 is kept only as an older working point. Historical C and recomputed C still differ because of the runner, so that gap is not a new gain. The KV-cache path also has a value-parity audit.
 
-| Branch | Occurrence Top-1 | Word Top-1 | Change vs recomputed C |
+| Branch at `lambda_LM=4.0` | Occurrence Top-1 | Word Top-1 | Against recomputed C |
 | --- | ---: | ---: | ---: |
-| Historical public C | 0.5370 | 0.6266 | +0.59 point |
-| Recomputed C with KV cache | 0.5311 | 0.6182 | 0 |
-| C plus phonetic soft snap | **0.5358** | **0.6286** | **+0.462 point** |
-| C plus Top-2 NMS starts | 0.5351 | 0.6268 | +0.401 point |
-| C plus PMI, `gamma=0.25` | 0.5342 | 0.6218 | +0.309 point |
-| C plus PMI, `gamma=1.00` | 0.5216 | 0.6026 | -0.956 point |
+| P, naive cut | 0.4112 | 0.4308 | -13.04 points |
+| C, recomputed with KV cache | 0.5416 | 0.6258 | 0 |
+| **C plus phonetic soft snap** | **0.5496** | **0.6449** | **+0.801 point** |
+| C plus Top-2 NMS starts | 0.5484 | 0.6383 | +0.678 point |
+| C plus PMI, `gamma=0.25` | 0.5438 | 0.6278 | +0.216 point |
+| Historical public C, `lambda_LM=1.5` | 0.5370 | 0.6266 | +0.59 point, runner difference |
 
-Phonetic soft snapping gains **0.462 point** over recomputed C, with a 95% CI of **[+0.061, +0.897]**. Against historical public C it is -0.123 point, with a 95% CI of [-0.582, +0.367], which is within noise. The branch remains optional, and C stays the default.
+Phonetic soft snapping gains **0.801 point** over recomputed C, with a 95% CI of **[+0.345, +1.262]**. It is the largest Stage-2 extension gain at weight 4.0 that improves both occurrence and word-level metrics with an interval above zero. It needs the optional `.[phonetic]` dependency and `--phonetic-snap` during `rerank`, so the core path remains C while the full recommendation enables it when available.
 
-The 95% CI for Top-2 NMS is [-0.091, +0.828], so the gain is not stable. Fixed `gamma=1` PMI loses 0.956 point, with a 95% CI of [-1.743, -0.186]. PMI is not in the default path.
+Top-2 NMS also becomes stable at 4.0, with a 95% CI of [+0.187, +1.175], but both point estimates trail phonetic snapping. PMI at `gamma=0.25` reaches only +0.216 point and `gamma=1.00` falls to 0.5071, so PMI remains outside the default path.
 
 ### Temporal shape, diagnostic signal and fusion failure
 
@@ -200,11 +245,12 @@ Shape arms convert candidate-window dynamics into a similarity score. Used alone
 | Base score | Shape signal | Grouping | Occurrence Top-1 change | 95% CI |
 | --- | --- | --- | ---: | --- |
 | LM-only | DTW gate | speaker 5-fold | **+0.832 point** | [+0.264, +1.449] |
-| `acoustic + 1.5 LM` | DTW gate only | utterance 5-fold | -0.100 point | [-0.373, +0.166] |
 | `acoustic + 1.5 LM` | All shape arms | utterance 5-fold | -0.333 point | [-0.605, -0.098] |
-| `acoustic + 1.5 LM` | All shape arms | speaker 5-fold | **-0.399 point** | [-0.741, -0.068] |
+| `acoustic + 1.5 LM` | All shape arms | speaker 5-fold | -0.399 point | [-0.741, -0.068] |
+| **`acoustic + 4.0 LM`** | **All shape arms** | **utterance 5-fold** | **-0.033 point** | **[-0.332, +0.268]** |
+| **`acoustic + 4.0 LM`** | **All shape arms** | **speaker 5-fold** | **-0.233 point** | **[-0.533, +0.065]** |
 
-DTW has a stable gain on the LM-only diagnostic baseline. After the acoustic term returns, the shape signal gives no net gain, and speaker-disjoint five-fold CV shows a stable loss. The result indicates that local acoustic dynamics and global semantic probability occupy different distributions. A simple linear combination cannot cash in the standalone ranking ability.
+DTW has a stable gain on the LM-only diagnostic baseline. After the acoustic term returns, the shape signal is negative at weight 1.5; at 4.0, nested utterance-grouped CV moves back to zero and speaker-grouped CV is -0.233 point with an interval that crosses zero. Neither grouping has a positive gain. The result indicates that local acoustic dynamics and global semantic probability occupy different distributions. A simple linear combination cannot cash in the standalone ranking ability.
 
 Shape tie-breaking is therefore an audit operator and remains disabled by default. Any later attempt to use temporal information needs a new conditioning mechanism and a separate held-out evaluation.
 
@@ -222,7 +268,7 @@ The first contribution is a reproducible baseline. Open-vocabulary dialect KWS o
 
 The second contribution is an alignment diagnostic. Heterogeneous time grids are common in cascaded systems. The project provides a measurable pollution criterion and a set of arms that change only the left context. The 25.8-point gap between C and X shows that context placement can decide whether reranking works.
 
-The third contribution is a reusable negative result. PMI, Top-2 NMS, whitening, multi-prototype templates, layer fusion, and temporal shape were all tested on the real corpus. They stay out of the default path because of confidence intervals, pool-recall loss, or a drop on the deployable baseline. Later work can avoid those directions or design a targeted experiment around the failure mechanism.
+The third contribution is a reusable negative result. PMI, ABTT, PCA whitening, multi-prototype templates, existing layer fusion, and fixed-weight temporal shape were all tested on the real corpus. Apart from phonetic snapping, these extensions stay out of the recommended path; Top-2 NMS becomes positive at weight 4.0 but still trails phonetic snapping. Later work can avoid those directions or design a targeted experiment around the failure mechanism.
 
 As an engineering prototype, the system shows a local enrollment and search path. A device needs only a few target-word recordings. Templates and latents can be produced locally, and the model does not update. It is a research baseline for dialect commands in smart-home and assisted-living devices. Production wake-word use still needs far-field robustness, false-accept measurement, real-time latency, power, rejection behavior, and independent evaluation across more dialects.
 
@@ -231,9 +277,11 @@ As an engineering prototype, the system shows a local enrollment and search path
 - The main experiment covers one 2031-utterance Wu dialect corpus and does not establish cross-dialect generalization.
 - Speaker groups come from the heuristic `rec_sXX` field rather than verified official speaker IDs.
 - The 4-bit layer sweep contains only 24 occurrences. It proposes candidate layers and does not replace a full evaluation.
-- Phonetic snapping is significant against recomputed C but has not beaten historical public C.
-- PMI, Top-2 NMS, ABTT, PCA whitening, multi-prototype templates, and layer fusion do not show a stable real-corpus net gain.
-- Shape tie-breaking is negative on the deployable fusion baseline and is disabled by default.
+- The layer-0 advantage comes from a 24-occurrence probe. Full layer-0 features have not been exported, so it is not yet a full-corpus optimum.
+- Phonetic snapping gains 0.801 point over recomputed C at `lambda_LM=4.0`, but it is validated on one corpus and needs an independent second corpus.
+- The 4.0 to 4.75 plateau is selected on this corpus; the weight still needs external cross-corpus validation.
+- PMI, ABTT, PCA whitening, multi-prototype templates, and existing layer-fusion views have no stable real-corpus net gain. Top-2 NMS is positive at 4.0 but below phonetic snapping.
+- Shape tie-breaking has no positive gain at `lambda_LM=4.0` and remains disabled.
 - This repository is a research prototype, not a production wake-word system.
 
 ## Repository map
@@ -292,7 +340,7 @@ python cli.py fuse \
   --pool reports/pool.jsonl \
   --lm reports/lm.jsonl \
   --variant C \
-  --lambda-lm 1.5 \
+  --lambda-lm 4.0 \
   --output reports/metrics.json
 
 python cli.py audit \
@@ -302,6 +350,8 @@ python cli.py audit \
   --null-shift 1 \
   --output reports/prefix_audit.json
 ```
+
+After `python -m pip install -e ".[phonetic]"`, add `--phonetic-snap` to the `rerank` command to enable the phonetic branch of the recommended combination.
 
 Real feature extraction needs a private audio manifest and a frozen model. The following command exports six layers in one pass.
 
