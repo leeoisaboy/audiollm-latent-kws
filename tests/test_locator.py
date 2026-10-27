@@ -25,7 +25,7 @@ def test_mean_template_localizes_a_synthetic_word(tmp_path):
 
     search = np.random.default_rng(11).normal(scale=0.05, size=(12, dimension))
     search[5:10] += center
-    pool = build_pool("utt", search, bank, pool_top=1)
+    pool = build_pool("utt", search, bank, pool_top=1, window=5)
     assert pool.words == ["开灯"]
     assert 3 <= int(pool.starts[0]) <= 7
 

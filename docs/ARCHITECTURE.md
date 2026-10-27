@@ -14,8 +14,9 @@
 
 - Acoustic latent frame: `0.08 s`
 - Character reading frame: `0.04 s`
-- Locator window: `5` frames by default; `8` frames plus enrollment mean
-  centering is the validated real-corpus setting
+- Locator window: `8` frames by default, with enrollment mean centering; this
+  is the validated real-corpus setting. The `k=5` row in the results is the
+  historical baseline, not the default.
 - Candidate pool: `20`
 - Grid-snapping tolerance: `6` reading frames
 - LM fusion weight: `4.0`; the validated plateau is `4.0` to `4.75`. The old

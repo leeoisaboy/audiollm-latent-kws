@@ -9,6 +9,7 @@ from analysis.audit import audit_prefix_pollution
 from analysis.evaluation import occurrence_metrics, score_records
 from analysis.layer_probe import compare_layer_fusions, compare_layers, stage1_metrics
 from analysis.shape import shape_fusion_delta
+from common.config import DEFAULT_CALIBRATION, PRIMARY_K
 from common.io import read_jsonl, write_json, write_jsonl
 from locator import DirectoryLatentStore, build_pool, build_templates, fit_latent_calibrator
 from reranker.align import load_reading
@@ -238,7 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
     locate.add_argument("--search-dir", required=True)
     locate.add_argument("--latent-width", type=int, default=3584)
     locate.add_argument("--pool-top", type=int, default=20)
-    locate.add_argument("--window", type=int, default=5, help="fixed acoustic window in 80 ms frames")
+    locate.add_argument("--window", type=int, default=PRIMARY_K, help="fixed acoustic window in 80 ms frames")
     locate.add_argument("--include-gold", action="store_true")
     locate.add_argument("--adaptive-window", action="store_true")
     locate.add_argument("--multi-scale", type=int, default=0)
@@ -249,7 +250,7 @@ def build_parser() -> argparse.ArgumentParser:
     locate.add_argument("--grow-delta", type=float, default=0.05)
     locate.add_argument("--nms-candidates", type=int, default=1)
     locate.add_argument("--nms-radius", type=int, default=2)
-    locate.add_argument("--whitening", choices=("none", "center", "abtt", "whiten"), default="none")
+    locate.add_argument("--whitening", choices=("none", "center", "abtt", "whiten"), default=DEFAULT_CALIBRATION)
     locate.add_argument("--whitening-rank", type=int, default=32)
     locate.add_argument("--calibration-dir", default="")
     locate.add_argument("--calibration-manifest", default="")
