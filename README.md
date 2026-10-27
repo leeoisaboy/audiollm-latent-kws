@@ -1,4 +1,10 @@
-<p align="right">
+<p align="center">
+  <a href="https://github.com/leeoisaboy/audiollm-latent-kws">
+    <img src="docs/assets/title_banner.zh.png" alt="AudioLLM-Latent-KWS：冻结 Audio-LLM 的方言开放词表关键词检索" />
+  </a>
+</p>
+
+<p align="center">
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-README-2f81f7?style=flat-square"></a>
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-555555?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-b8860b?style=flat-square">
@@ -38,6 +44,11 @@
 这里最容易误读的是第三项。时序形状确实携带信息，单臂排序并不接近随机。把该信号放进完整的“声学加 LM”融合后，收益消失，speaker-disjoint 五折还出现稳定下降。项目保留这条阴性结果，因为它直接约束了后续多模态融合的设计方向。
 
 ## 方法
+
+<p align="center">
+  <img src="docs/assets/architecture_poster.png" alt="两阶段流程：声学隐空间定位、网格吸附切点与冻结语言模型重排" />
+</p>
+<p align="center"><sub>小狗先把候选圈出来，语言模型再核对前缀。定位阶段负责召回，重排阶段负责候选内排序。</sub></p>
 
 ```mermaid
 flowchart LR
@@ -137,6 +148,11 @@ ABTT、PCA 白化、时长自适应、多原型和多尺度都没有超过该配
 ### 七臂消融，时间网格对齐
 
 七臂使用同一候选池、同一冻结模型和同一融合权重，只改变左文境构造。下表来自较早的公开工作点，当时 Top-20 池召回为 0.9266。该表用于对齐机制归因，不能与当前 0.9467 基线的数字逐项混用。
+
+<p align="center">
+  <img src="docs/assets/grid_alignment_spotlight.png" alt="80 毫秒声学网格与 40 毫秒字符网格的朴素切分和吸附切分对比" />
+</p>
+<p align="center"><sub>两种时钟指向同一个边界。吸附只移动切点，冻结模型和融合权重不变。</sub></p>
 
 | Arm | 左文境规则 | 按词 Top-1 |
 | --- | --- | ---: |

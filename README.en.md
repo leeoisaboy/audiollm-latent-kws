@@ -1,6 +1,12 @@
-<p align="right">
-  <img alt="English" src="https://img.shields.io/badge/English-current-2f81f7?style=flat-square">
+<p align="center">
+  <a href="https://github.com/leeoisaboy/audiollm-latent-kws">
+    <img src="docs/assets/title_banner.en.png" alt="AudioLLM-Latent-KWS: training-free open-vocabulary dialect keyword search" />
+  </a>
+</p>
+
+<p align="center">
   <a href="README.md"><img alt="Chinese" src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-README-d73a49?style=flat-square"></a>
+  <img alt="English" src="https://img.shields.io/badge/English-current-2f81f7?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-555555?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-b8860b?style=flat-square">
 </p>
@@ -39,6 +45,11 @@ The project asks three questions.
 The third row is easy to misread. Temporal shape carries real information, and its standalone ranking is far above chance. The gain disappears after the full acoustic plus LM fusion, and speaker-disjoint cross-validation shows a stable loss. The project keeps this negative result because it directly constrains later multimodal fusion designs.
 
 ## Method
+
+<p align="center">
+  <img src="docs/assets/architecture_poster.png" alt="Two-stage pipeline: acoustic latent localization, grid-snapped cut points, and frozen language-model reranking" />
+</p>
+<p align="center"><sub>The mascot marks the candidates first; the language model checks the prefix second. Localization handles recall, and reranking orders the pool.</sub></p>
 
 ```mermaid
 flowchart LR
@@ -138,6 +149,11 @@ No layer-fusion view improves on `llm2`, which remains the default. The small-pr
 ### Seven-arm ablation, time-grid alignment
 
 All seven arms share the same candidate pool, frozen model, and fusion weight. Only the left context changes. The table comes from an earlier public working point with a 0.9266 Top-20 pool recall. It is used for attribution of the alignment effect and should not be numerically mixed with the current 0.9467 baseline.
+
+<p align="center">
+  <img src="docs/assets/grid_alignment_spotlight.png" alt="Naive versus grid-snapped cuts across 80 ms acoustic frames and 40 ms character readings" />
+</p>
+<p align="center"><sub>Both clocks describe the same boundary. Snapping moves the cut point only; the frozen model and fusion weight stay unchanged.</sub></p>
 
 | Arm | Left-context rule | Word Top-1 |
 | --- | --- | ---: |
