@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+*.npy binary
+*.wav binary
+*.flac binary
+*.mp3 binary
+*.safetensors binary
+*.png binary
+*.jpg binary
+*.jpeg binary

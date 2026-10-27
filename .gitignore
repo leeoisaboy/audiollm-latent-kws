@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+build/
+dist/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Generated experiment outputs
+features/
+reports/
+*.log
+
+# Private or generated speech data
+data/layer_probe/
+data/synthetic/
+data/**/*.npy
+data/**/*.wav
+data/**/*.flac
+data/**/*.mp3
+data/**/*.m4a
+data/**/*.ogg
+data/**/*.jsonl
+!data/**/*.example.jsonl
+
+# Model weights and archives
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.zip
+*.tar
+*.tar.gz
+
+# Patch debris
+*.orig
+*.rej

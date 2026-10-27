@@ -1,0 +1,2 @@
+{"utt": "example-0001", "text": "请帮我把客厅的灯打开", "gold": [{"word": "开灯", "kw_t0": 0.80, "kw_t1": 1.20}], "license": "replace-with-dataset-license", "speaker_group": "example-only"}
+{"utt": "example-0002", "text": "卧室有点闷，请关窗", "gold": [{"word": "关窗", "kw_t0": 0.72, "kw_t1": 1.08}], "license": "replace-with-dataset-license", "speaker_group": "example-only"}

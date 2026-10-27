@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audiollm-latent-kws"
+version = "0.1.0"
+description = "Training-free open-vocabulary dialect keyword search with frozen Audio-LLM latents"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "AudioLLM-Latent-KWS Contributors" }]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+torch = ["torch>=2.1"]
+stepaudio2 = [
+  "torch>=2.1",
+  "transformers==4.53.3",
+  "peft>=0.11",
+  "torchaudio>=2.1",
+  "librosa>=0.10",
+  "bitsandbytes>=0.43",
+]
+dev = ["pytest>=7"]
+phonetic = ["pypinyin>=0.51"]
+
+[project.scripts]
+audiollm-latent-kws = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+packages = ["common", "locator", "reranker", "analysis", "integration"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

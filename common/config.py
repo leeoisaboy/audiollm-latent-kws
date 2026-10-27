@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+FRAME_S = 0.08
+READ_FRAME_S = 0.04
+LATENT_LAYER = 2
+LATENT_WIDTH = 3584
+PRIMARY_K = 5
+GROW_DELTA = 0.05
+DEFAULT_PROTOTYPES = 1
+DEFAULT_NMS = 1
+DEFAULT_NMS_RADIUS = 2
+DEFAULT_WHITENING_RANK = 32
+DEFAULT_CALIBRATION_FRAMES = 8192
+DEFAULT_POOL_TOP = 20
+GRID_SNAP_TOL = 6
+NULL_SHIFT = 137
+LAMBDA_LM = 1.5
+DEFAULT_PMI_GAMMA = 1.0
+DEFAULT_ENTROPY_THRESHOLD = 0.65
+Z_EPS = 1e-8
+
+NEUTRAL_KEYWORDS = ["开灯", "关窗", "拉帘", "调温", "打开电视", "关闭风扇"]
+
+
+def is_cjk(symbol: str) -> bool:
+    code = ord(symbol[0])
+    return 0x3400 <= code <= 0x9FFF or 0xF900 <= code <= 0xFAFF
