@@ -1,0 +1,26 @@
+{
+ "C": {
+  "n": 3244,
+  "contains_own_first_char": 0.03390875462392109,
+  "ends_on_own_first_char": 0.01726263871763255,
+  "prefix_len_median": 8.0
+ },
+ "P": {
+  "n": 3244,
+  "contains_own_first_char": 0.35234278668310726,
+  "ends_on_own_first_char": 0.3418618988902589,
+  "prefix_len_median": 9.0
+ },
+ "S": {
+  "n": 3244,
+  "contains_own_first_char": 0.12299630086313193,
+  "ends_on_own_first_char": 0.02250308261405672,
+  "prefix_len_median": 8.0
+ },
+ "X": {
+  "n": 3244,
+  "contains_own_first_char": 0.0749075215782984,
+  "ends_on_own_first_char": 0.010172626387176326,
+  "prefix_len_median": 8.0
+ }
+}

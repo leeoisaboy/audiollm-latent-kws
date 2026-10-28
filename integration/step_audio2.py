@@ -17,7 +17,6 @@ AUDIO_PATCH = 151690
 AUDIO_END = 151689
 SAMPLE_RATE = 16_000
 INSTRUCTION = "<audio>\u8bf7\u8bb0\u5f55\u4e0b\u4f60\u6240\u542c\u5230\u7684\u8bed\u97f3\u5185\u5bb9\u3002"
-TEXT_INSTRUCTION = "\u8bf7\u6839\u636e\u5df2\u7ed9\u8bed\u5883\u8865\u5168\u4e0b\u4e00\u4e2a\u8bcd\u3002"
 
 
 def install_bf16_linear_guard(min_rows: int = 40):
@@ -98,13 +97,6 @@ def prompt_ids(tokenizer, text: str = INSTRUCTION) -> list[int]:
     return tokenizer(
         "<|BOT|>human\n" + text.replace("<audio>", "<audio_patch>")
         + "<|EOT|><|BOT|>assistant\n",
-        add_special_tokens=False,
-    )["input_ids"]
-
-
-def text_prompt_ids(tokenizer, text: str = TEXT_INSTRUCTION) -> list[int]:
-    return tokenizer(
-        "<|BOT|>human\n" + text + "<|EOT|><|BOT|>assistant\n",
         add_special_tokens=False,
     )["input_ids"]
 
@@ -199,41 +191,6 @@ def _audio_span(hidden, input_ids):
     return hidden[0, start : max(start + 1, int(ends[-1]))]
 
 
-def extract_layer2(model, tokenizer, wav_path: str, device: str, max_duration: float = 30.0):
-    """Return the frozen audio-slot states after LLM block 2 as float32."""
-    import torch
-
-    audio = load_audio(wav_path, max_duration).to(device)
-    if audio.numel() < 8_000:
-        audio = torch.nn.functional.pad(audio, (0, 8_000 - audio.numel()))
-    mel = log_mel_spectrogram(audio).to(device)
-    ids = torch.tensor(
-        [expand_audio_token(prompt_ids(tokenizer), audio_token_count(mel.shape[1]))],
-        dtype=torch.long,
-        device=device,
-    )
-    hidden = model.model.embed_tokens(ids)
-    encoder_dtype = next(model.encoder.parameters()).dtype
-    wavs = mel.unsqueeze(0).to(dtype=encoder_dtype)
-    with torch.inference_mode():
-        encoded, encoder_lengths = model.encoder(
-            wavs, torch.tensor([mel.shape[1] - 2], dtype=torch.int32, device=device)
-        )
-        adapter_dtype = next(model.adapter.parameters()).dtype
-        encoded = model.adapter(encoded.to(adapter_dtype))
-        slots = audio_token_count(mel.shape[1])
-        upper = (int(encoder_lengths[0].item()) - 1) // 2 + 1
-        length = min(encoded.shape[1], max(upper, 1), max(slots, 1))
-        start = int(torch.nonzero(ids[0] == AUDIO_START).flatten()[-1]) + 1
-        hidden[0, start : start + length] = encoded[0, :length].to(hidden.dtype)
-        states = model.model(
-            inputs_embeds=hidden,
-            attention_mask=torch.ones_like(ids),
-            output_hidden_states=True,
-        ).hidden_states
-        return extract_layers(model, tokenizer, wav_path, device, (2,), max_duration)[2]
-
-
 def extract_layers(
     model,
     tokenizer,
@@ -314,13 +271,10 @@ class StepAudio2Scorer(AudioLMScorer):
         self.min_gemm_rows = max(1, int(min_gemm_rows))
         self.max_candidate_batch = max(1, int(max_candidate_batch))
         self.prompt = prompt_ids(tokenizer)
-        self.text_prompt = text_prompt_ids(tokenizer)
         self.audio = None
         self._audio_key: str | None = None
         self._audio_cache = None
         self._audio_last_hidden = None
-        self._text_cache = None
-        self._text_last_hidden = None
         self.last_stats = {
             "cache_enabled": bool(use_kv_cache),
             "audio_prefills": 0,
@@ -450,32 +404,6 @@ class StepAudio2Scorer(AudioLMScorer):
         )
         self.last_stats["prefix_prefills"] += 1
         return new_cache, hidden[:, -1:, :]
-
-    def _candidate_log_probability(self, cache, last_hidden, candidate_ids: Sequence[int]) -> float:
-        import torch
-
-        ids = list(int(value) for value in candidate_ids)
-        if not ids:
-            return float("-inf")
-        past_length = int(cache.get_seq_length())
-        hidden = last_hidden
-        if len(ids) > 1:
-            cache = self._clone_cache(cache)
-            prompt = torch.tensor([ids[:-1]], dtype=torch.long, device=self.device)
-            embeddings = self.model.model.embed_tokens(prompt)
-            hidden_out, _ = self._forward_hidden(
-                inputs_embeds=embeddings,
-                attention_mask=torch.ones(
-                    1, past_length + len(ids) - 1, dtype=torch.long, device=self.device
-                ),
-                past_key_values=cache,
-            )
-            hidden = torch.cat([last_hidden, hidden_out], dim=1)
-            self.last_stats["candidate_prefills"] += 1
-        picked = hidden.reshape(-1, hidden.shape[-1])
-        candidate_tensor = torch.tensor(ids, dtype=torch.long, device=self.device)
-        selected = self._vocab_logprobs(picked, candidate_tensor)
-        return float(selected.mean().item())
 
     def _vocab_logprobs(self, picked, candidate_tensor):
         """Return per-position log-probabilities for the requested tokens.
@@ -646,37 +574,6 @@ class StepAudio2Scorer(AudioLMScorer):
                 values[indexes] = self._score_group(audio, group_prefixes, group_ids)
                 self.last_stats["full_sequence_forwards"] += 1
         return values
-
-    def score_text_only(self, prefixes: Sequence[str], candidates: Sequence[str]):
-        import torch
-
-        if len(prefixes) != len(candidates):
-            raise ValueError("one prefix is required for every candidate")
-        if not self.use_kv_cache:
-            raise ValueError("PMI text scoring requires KV-cache mode")
-        if self._text_cache is None:
-            ids = torch.tensor([self.text_prompt], dtype=torch.long, device=self.device)
-            embeddings = self.model.model.embed_tokens(ids)
-            hidden, cache = self._forward_hidden(
-                inputs_embeds=embeddings,
-                attention_mask=torch.ones_like(ids),
-            )
-            self._text_cache = cache
-            self._text_last_hidden = hidden[:, -1:, :]
-        grouped: dict[str, list[int]] = {}
-        tokenized: dict[str, list[list[int]]] = {}
-        for index, candidate in enumerate(candidates):
-            ids = self.tokenizer.encode(candidate, add_special_tokens=False)
-            key = prefixes[index]
-            grouped.setdefault(key, []).append(index)
-            tokenized.setdefault(key, []).append(ids)
-        values = np.empty(len(candidates), dtype=np.float64)
-        for key, indexes in grouped.items():
-            values[indexes] = self._score_prefix_group(
-                self._text_cache, self._text_last_hidden, key, tokenized[key]
-            )
-        return values
-
 
 def create_scorer(
     model: str,

@@ -1,11 +1,24 @@
 from __future__ import annotations
 
+from bisect import bisect_right
 from typing import Any, Mapping, Sequence
 
 import numpy as np
 
-from common.config import FRAME_S
-from reranker.align import cut_text, snapped_cut_text
+from common.config import FRAME_S, is_cjk
+from reranker.align import snapped_cut_text
+
+
+def naive_cut_text(
+    chars: Sequence[tuple[int, str]], seconds: float, read_frame_s: float
+) -> str:
+    """Hard-cut at the nearest reading frame, the negative baseline P."""
+    if not chars or seconds < 0:
+        return ""
+    target = seconds / read_frame_s
+    frames = [frame for frame, _ in chars]
+    stop = bisect_right(frames, target)
+    return "".join(symbol for _, symbol in chars[:stop] if is_cjk(symbol))
 
 
 def audit_prefix_pollution(
@@ -19,7 +32,12 @@ def audit_prefix_pollution(
     phonetic: bool = False,
     max_phoneme_distance: int = 1,
 ) -> dict[str, dict[str, float]]:
-    """Count self-first-character leakage for P, C, S, and the X control."""
+    """Count self-first-character leakage for P, C, S, and the X control.
+
+    P is the naive hard cut, C is the production snapped cut, S reuses the
+    first candidate's snapped prefix for every candidate, and X substitutes a
+    different utterance's reading without changing the timestamps.
+    """
     order = [row["utt"] for row in pool_rows]
     stats: dict[str, dict[str, list[int | float]]] = {
         arm: {"n": [], "leak": [], "ends": [], "length": []} for arm in ("P", "C", "S", "X")
@@ -58,7 +76,7 @@ def audit_prefix_pollution(
                 continue
             seconds = starts[pool_position] * frame_s
             contexts = {
-                "P": cut_text(chars, seconds, read_frame_s),
+                "P": naive_cut_text(chars, seconds, read_frame_s),
                 "C": snapped_cut_text(
                     chars,
                     word,
@@ -69,7 +87,7 @@ def audit_prefix_pollution(
                     max_phoneme_distance,
                 ),
                 "S": shared,
-                "X": cut_text(null_chars, seconds, read_frame_s),
+                "X": naive_cut_text(null_chars, seconds, read_frame_s),
             }
             for arm, prefix in contexts.items():
                 bucket = stats[arm]

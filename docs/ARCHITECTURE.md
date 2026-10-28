@@ -22,28 +22,25 @@
 - LM fusion weight: `4.0`; the validated plateau is `4.0` to `4.75`. The old
   `1.5` was inherited from an earlier experiment and was not tuned.
 
-The deployable reranking arms are A, P, X, S, and C; C is the default. O and T
-require transcript timestamps and exist only to expose the remaining headroom.
+The production reranker uses the C boundary only. The frozen research module
+`experiments/legacy/align.py` retains A, P, X, S, C, O, and T for reproducing the
+seven-arm diagnostic table. O and T require transcript timestamps and are not a
+deployment path.
 
-## Optional optimization paths
+## Research-only paths
 
-The published baseline remains the default. The following paths are explicit
-opt-in ablations:
+Rejected variants live under `experiments/legacy/` and `experiments/`. They are
+imported by the scripts under `scripts/`, not by the production CLI:
 
-- `locate --adaptive-window --multi-scale R`: one window length per keyword from
-  the enrollment mean duration, evaluated at $k_w\pm R$ frames.
-- `locate --prototypes M --nms-candidates T`: deterministic per-word k-means
-  prototypes and separated alternative starts (`ps_alt` in pool rows).
-- `locate --whitening center|abtt|whiten`: calibrator fitted on enrollment or a
-  separate unlabeled background manifest, never on labels.
-- `compare-fusions`: weighted layer pooling (`0:0.7,2:0.3`) or concatenation
-  (`concat:0,2`) for Stage 1.
-- `rerank --phonetic-snap`: pinyin-key edit-distance matching before the 40 ms
-  grid snap; `--alternate-starts` re-scores NMS start candidates.
-- `rerank --pmi` + `fuse --calibration pmi`: subtract the text-only prior from
-  the audio-conditional candidate log probability inside each pool.
-- `analyze-shape --gating`: enable the first-difference shape term only when the
-  LM pool entropy exceeds the configured threshold.
+- duration-adaptive windows and peak growing;
+- multi-prototype/k-means templates and alternative starts;
+- ABTT and PCA whitening;
+- score-level layer fusion;
+- PMI text-prior calibration;
+- temporal-shape and entropy-gated fusion.
+
+The only optional production switch is `rerank --phonetic-snap`, which uses a
+pinyin edit distance before the 40 ms grid snap.
 
 Real-corpus outcome (see `docs/REAL_CORPUS_RESULTS.md`):
 
@@ -55,9 +52,9 @@ Real-corpus outcome (see `docs/REAL_CORPUS_RESULTS.md`):
 | ABTT / PCA whitening | large pool-recall loss |
 | layer late fusion | no gain over `llm2` |
 | phonetic snap | +0.80 point over recomputed C at LM weight 4.0 |
-| LM weight 1.5 -> 4.0 | +1.05 point on the same recomputed runner; nested CV +0.80 |
+| LM weight 1.5 -> 4.0 | +1.05 point on the same recomputed runner; grouped CV supports the 4.0 plateau, with an optional 5.0-5.5 point for C+phonetic |
 | PMI calibration | negative at gamma >= 0.75 |
-| DTW-gated shape | positive on LM-only; zero within noise at LM weight 4.0, no deployable gain |
+| DTW-gated shape | positive on LM-only; +0.17 / +0.03 points at LM weight 4.0, both CIs cross zero |
 
 ## KV-cache protocol
 
@@ -102,5 +99,6 @@ Pass `--dtype bfloat16` only on a runtime that has been re-tested.
 P was the pre-registered naive policy. The audit showed why it failed, and C
 changed only the boundary choice using data already present in the pipeline. No
 new model, feature, annotation, parameter, or fitted threshold is introduced.
-The X control remains essential: a wrong-sentence prefix reaches 0.3597, while
-the correctly snapped prefix reaches 0.6172 on the same pool.
+The X control remains essential: on the real audit, a wrong-sentence prefix
+still contains the target first character in 7.49% of occurrences, versus 3.39%
+for the correctly snapped C prefix and 35.23% for the naive P cut.

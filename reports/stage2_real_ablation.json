@@ -1,0 +1,88 @@
+{
+  "config": {
+    "n_utterances": 2031,
+    "pool_top": 20,
+    "alt_count": 2,
+    "alt_radius": 2,
+    "lambda_lm": 1.5,
+    "device": "cuda:0"
+  },
+  "metrics": {
+    "existing_P": {
+      "n_occurrences": 3244,
+      "top1": 0.4599260172626387,
+      "top1_words": 0.4974209197474332
+    },
+    "existing_C": {
+      "n_occurrences": 3244,
+      "top1": 0.5369913686806412,
+      "top1_words": 0.6266113549554954
+    },
+    "C": {
+      "n_occurrences": 3244,
+      "top1": 0.531134401972873,
+      "top1_words": 0.6182287602978106
+    },
+    "P": {
+      "n_occurrences": 3244,
+      "top1": 0.45376078914919854,
+      "top1_words": 0.48523537269650435
+    },
+    "C_phonetic": {
+      "n_occurrences": 3244,
+      "top1": 0.5357583230579531,
+      "top1_words": 0.6286180848514427
+    },
+    "C_alt": {
+      "n_occurrences": 3244,
+      "top1": 0.5351418002466092,
+      "top1_words": 0.626819941333763
+    },
+    "C_pmi_gamma0.25": {
+      "n_occurrences": 3244,
+      "top1": 0.5342170160295932,
+      "top1_words": 0.6218317589796202
+    },
+    "C_pmi_gamma0.5": {
+      "n_occurrences": 3244,
+      "top1": 0.533292231812577,
+      "top1_words": 0.6208843825427511
+    },
+    "C_pmi_gamma0.75": {
+      "n_occurrences": 3244,
+      "top1": 0.5268187422934648,
+      "top1_words": 0.6093424078594902
+    },
+    "C_pmi_gamma1": {
+      "n_occurrences": 3244,
+      "top1": 0.5215782983970407,
+      "top1_words": 0.6025988382654635
+    },
+    "C_pmi_gamma1.5": {
+      "n_occurrences": 3244,
+      "top1": 0.4873612823674476,
+      "top1_words": 0.5574525287360272
+    }
+  },
+  "prefix_leak_rate": {
+    "C": 0.012875430822255047,
+    "C_phonetic": 0.012949286065977351
+  },
+  "bootstrap_vs_recomputed_C": {
+    "C_phonetic": {
+      "mean_gain_pts": 0.46239210850801404,
+      "ci95_low_pts": 0.06089902524525348,
+      "ci95_high_pts": 0.897409878417811
+    },
+    "C_alt": {
+      "mean_gain_pts": 0.4007398273736196,
+      "ci95_low_pts": -0.09116883659111452,
+      "ci95_high_pts": 0.8279859413358289
+    },
+    "C_pmi_gamma1": {
+      "mean_gain_pts": -0.9556103575832253,
+      "ci95_low_pts": -1.743141408975457,
+      "ci95_high_pts": -0.1862139668268001
+    }
+  }
+}

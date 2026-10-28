@@ -1,9 +1,9 @@
 import numpy as np
 
-from analysis.audit import audit_prefix_pollution
+from analysis.audit import audit_prefix_pollution, naive_cut_text
 from analysis.evaluation import score_records
+from common.config import is_cjk
 from common.scoring import fuse, rank_of, zpool
-from scripts.stage2_real_ablation import published_scores
 
 
 def test_pool_zscore_prevents_raw_scale_domination():
@@ -17,6 +17,10 @@ def test_pool_zscore_prevents_raw_scale_domination():
 def test_rank_counts_ties_as_half():
     assert rank_of([3, 3, 2], 0) == 1.5
     assert rank_of([3, 3, 2], 2) == 3.0
+
+
+def test_empty_symbol_is_not_cjk():
+    assert not is_cjk("")
 
 
 def test_audit_reports_pollution_for_naive_and_snapped_cuts():
@@ -33,41 +37,21 @@ def test_audit_reports_pollution_for_naive_and_snapped_cuts():
     report = audit_prefix_pollution(pool, {"u": {}}, {"u": reading}, 0.04, null_shift=0)
     assert report["P"]["contains_own_first_char"] == 1.0
     assert report["C"]["contains_own_first_char"] == 0.0
+    assert naive_cut_text(reading, 0.24, 0.04) == "请帮我开"
 
 
-def test_pmi_calibration_removes_a_text_only_frequency_prior():
+def test_fusion_uses_the_single_production_arm():
     pool = [
         {
             "utt": "u",
-            "words": ["common", "target"],
+            "words": ["开灯", "关窗"],
             "score": [0.50, 0.49],
             "ps": [1, 2],
             "ntop": 2,
-            "gold": [{"word": "target"}],
+            "gold": [{"word": "关窗"}],
         }
     ]
-    lm = {
-        "u": {
-            "scores": {"common": {"C": -0.2}, "target": {"C": -0.3}},
-            "text_scores": {"common": {"C": -0.1}, "target": {"C": -2.0}},
-        }
-    }
-    without_pmi = score_records(pool, lm, "C", lambda_lm=1.5)
-    with_pmi = score_records(pool, lm, "C", lambda_lm=1.5, calibration="pmi", gamma=1.0)
-    assert without_pmi[0]["winner"] == "common"
-    assert with_pmi[0]["winner"] == "target"
-
-
-def test_published_scores_transposes_the_word_and_arm_axes():
-    rows = [
-        {
-            "utt": "u1",
-            "scores": {
-                "开灯": {"P": -2.0, "C": -0.5},
-                "关窗": {"P": -3.0, "C": -4.0},
-            },
-        }
-    ]
-    scores = published_scores(rows)["u1"]["scores"]
-    assert scores["C"] == {"开灯": -0.5, "关窗": -4.0}
-    assert scores["P"]["关窗"] == -3.0
+    lm = {"u": {"scores": {"开灯": {"C": -0.2}, "关窗": {"C": -3.0}}}}
+    records = score_records(pool, lm, "C", lambda_lm=4.0)
+    assert records[0]["winner"] == "开灯"
+    assert records[0]["rank"] == 2.0

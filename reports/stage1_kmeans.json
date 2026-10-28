@@ -1,0 +1,72 @@
+{
+  "llm2|none|k5_mean": {
+    "layer": "llm2",
+    "calibration": "none",
+    "config": "k5_mean",
+    "n_occurrences": 3244,
+    "top1": 0.43711467324291,
+    "top1_words": 0.48207683169399096,
+    "top5": 0.748766954377312,
+    "top20": 0.9250924784217016,
+    "rank_median": 2.0,
+    "coverage_mean": 0.7314117392290705,
+    "iou_median": 0.6,
+    "coverage_gt0": 0.9543773119605425
+  },
+  "llm2|none|k8_mean": {
+    "layer": "llm2",
+    "calibration": "none",
+    "config": "k8_mean",
+    "n_occurrences": 3244,
+    "top1": 0.47318125770653513,
+    "top1_words": 0.5522988160704861,
+    "top5": 0.7953144266337855,
+    "top20": 0.9343403205918619,
+    "rank_median": 2.0,
+    "coverage_mean": 0.8895051199136164,
+    "iou_median": 0.5,
+    "coverage_gt0": 0.9808877928483354
+  },
+  "llm2|none|adapt_ms_takes": {
+    "layer": "llm2",
+    "calibration": "none",
+    "config": "adapt_ms_takes",
+    "n_occurrences": 3244,
+    "top1": 0.4405055487053021,
+    "top1_words": 0.49187904685158546,
+    "top5": 0.749075215782984,
+    "top20": 0.9093711467324291,
+    "rank_median": 2.0,
+    "coverage_mean": 0.7905769166319032,
+    "iou_median": 0.5714285714285714,
+    "coverage_gt0": 0.9565351418002466
+  },
+  "llm2|none|adapt_ms_kmeans2": {
+    "layer": "llm2",
+    "calibration": "none",
+    "config": "adapt_ms_kmeans2",
+    "n_occurrences": 3244,
+    "top1": 0.4497533908754624,
+    "top1_words": 0.5142240452051662,
+    "top5": 0.7641800246609125,
+    "top20": 0.9167694204685574,
+    "rank_median": 2.0,
+    "coverage_mean": 0.8053472580360387,
+    "iou_median": 0.5714285714285714,
+    "coverage_gt0": 0.9654747225647349
+  },
+  "llm2|none|adapt_ms_kmeans3": {
+    "layer": "llm2",
+    "calibration": "none",
+    "config": "adapt_ms_kmeans3",
+    "n_occurrences": 3244,
+    "top1": 0.4405055487053021,
+    "top1_words": 0.49187904685158546,
+    "top5": 0.749075215782984,
+    "top20": 0.9093711467324291,
+    "rank_median": 2.0,
+    "coverage_mean": 0.7905769166319032,
+    "iou_median": 0.5714285714285714,
+    "coverage_gt0": 0.9565351418002466
+  }
+}

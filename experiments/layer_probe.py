@@ -8,13 +8,8 @@ import numpy as np
 
 from common.io import read_jsonl
 from common.config import FRAME_S
-from locator import (
-    DirectoryLatentStore,
-    LayerViewStore,
-    build_pool,
-    build_templates,
-    parse_fusion_specs,
-)
+from experiments.legacy.layers import LayerViewStore, parse_fusion_specs
+from locator import DirectoryLatentStore, build_pool, build_templates
 from locator.templates import l2_normalize
 
 

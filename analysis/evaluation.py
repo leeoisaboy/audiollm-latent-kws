@@ -33,12 +33,11 @@ def occurrence_metrics(records: Sequence[Mapping[str, Any]], top_k=(1, 3, 5, 20)
 def score_records(
     pool_rows,
     lm_rows,
-    variant: str,
+    variant: str = "C",
     lambda_lm: float = 4.0,
     pool_top: int = 20,
-    calibration: str = "none",
-    gamma: float = 1.0,
 ):
+    """Fuse acoustic and one language-model score stream for each pool."""
     from common.scoring import fuse, zpool
 
     records = []
@@ -53,19 +52,6 @@ def score_records(
             [lm_row.get("scores", {}).get(word, {}).get(variant, np.nan) for word in words],
             dtype=np.float64,
         )
-        if calibration == "pmi":
-            text_scores = np.asarray(
-                [
-                    lm_row.get("text_scores", {}).get(word, {}).get(variant, np.nan)
-                    for word in words
-                ],
-                dtype=np.float64,
-            )
-            if not np.all(np.isfinite(text_scores)):
-                raise ValueError("PMI calibration requested but text-only scores are missing")
-            language_model = language_model - gamma * text_scores
-        elif calibration != "none":
-            raise ValueError("calibration must be none or pmi")
         fused = fuse(acoustic, language_model, lambda_lm)
         winner = int(np.argmax(fused))
         for item in pool_row.get("gold", []):

@@ -23,9 +23,30 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Generated experiment outputs
+# Generated experiment outputs. Only the small evidence reports linked by the
+# public documentation are tracked; raw score dumps and local smoke output stay
+# out of the repository.
 features/
-reports/
+reports/*
+!reports/README.md
+!reports/cache_benchmark.json
+!reports/layer_comparison.json
+!reports/lambda_cv_speaker.json
+!reports/lambda_cv_speaker_C.json
+!reports/lambda_cv_speaker_phonetic.json
+!reports/lambda_cv_utterance.json
+!reports/prefix_audit_real.json
+!reports/shape_gate_cv_fused_l4.json
+!reports/shape_gate_cv_fused_l4_speaker.json
+!reports/stage1_cv.json
+!reports/stage1_cv_speaker.json
+!reports/stage1_grow.json
+!reports/stage1_kmeans.json
+!reports/stage1_layer_fusion.json
+!reports/stage1_layer_fusion_none.json
+!reports/stage2_cache_parity.json
+!reports/stage2_lambda_sweep.json
+!reports/stage2_real_ablation.json
 *.log
 
 # Private or generated speech data

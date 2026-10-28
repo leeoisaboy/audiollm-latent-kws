@@ -1,0 +1,89 @@
+{
+  "config": {
+    "n_utterances": 200,
+    "candidate_pool": 20,
+    "dtype": "fp16",
+    "device": "cuda:0",
+    "full_sequence_grouping": "prefix-token-length x candidate-token-length"
+  },
+  "arms": {
+    "P": {
+      "max_abs_nats": 0.046875,
+      "p95_utterance_max_abs_nats": 0.03125,
+      "median_utterance_max_abs_nats": 0.018866539001464844,
+      "spearman_min": 0.9969924812030074,
+      "top1_identical": 200,
+      "utterances": 200
+    },
+    "C": {
+      "max_abs_nats": 0.03906059265136719,
+      "p95_utterance_max_abs_nats": 0.02958221435546874,
+      "median_utterance_max_abs_nats": 0.017212390899658203,
+      "spearman_min": 0.9969924812030074,
+      "top1_identical": 199,
+      "utterances": 200
+    },
+    "C_phonetic": {
+      "max_abs_nats": 0.03906059265136719,
+      "p95_utterance_max_abs_nats": 0.03008012771606444,
+      "median_utterance_max_abs_nats": 0.017405271530151367,
+      "spearman_min": 0.9969924812030074,
+      "top1_identical": 199,
+      "utterances": 200
+    },
+    "C_alt": {
+      "max_abs_nats": 0.03906059265136719,
+      "p95_utterance_max_abs_nats": 0.02749390602111816,
+      "median_utterance_max_abs_nats": 0.016357898712158203,
+      "spearman_min": 0.9984962406015038,
+      "top1_identical": 199,
+      "utterances": 200
+    }
+  },
+  "metrics": {
+    "full": {
+      "C": {
+        "n_occurrences": 256,
+        "top1": 0.64453125,
+        "top1_words": 0.6342887473460722
+      },
+      "P": {
+        "n_occurrences": 256,
+        "top1": 0.4921875,
+        "top1_words": 0.5021231422505308
+      },
+      "C_phonetic": {
+        "n_occurrences": 256,
+        "top1": 0.65625,
+        "top1_words": 0.6502123142250531
+      },
+      "C_alt": {
+        "n_occurrences": 256,
+        "top1": 0.63671875,
+        "top1_words": 0.6332271762208067
+      }
+    },
+    "cached": {
+      "C": {
+        "n_occurrences": 256,
+        "top1": 0.64453125,
+        "top1_words": 0.6342887473460722
+      },
+      "P": {
+        "n_occurrences": 256,
+        "top1": 0.4921875,
+        "top1_words": 0.5021231422505308
+      },
+      "C_phonetic": {
+        "n_occurrences": 256,
+        "top1": 0.65625,
+        "top1_words": 0.6502123142250531
+      },
+      "C_alt": {
+        "n_occurrences": 256,
+        "top1": 0.63671875,
+        "top1_words": 0.6332271762208067
+      }
+    }
+  }
+}

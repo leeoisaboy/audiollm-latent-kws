@@ -13,7 +13,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from locator import DirectoryLatentStore, build_pool, build_templates
+from experiments.legacy.search import build_pool
+from experiments.legacy.templates import DirectoryLatentStore, build_templates
 from stage1_real_ablation import load_feature, read_jsonl, span_frames
 
 

@@ -102,6 +102,3 @@ class LayerViewStore(LatentStore):
             for weight, array in zip(self.specification.weights, arrays)
         )
 
-    def output_width(self, clip_id: str) -> int:
-        width = int(np.load(self._paths[0] / f"{clip_id}.npy", mmap_mode="r").shape[1])
-        return width * len(self._paths) if self.specification.concat else width

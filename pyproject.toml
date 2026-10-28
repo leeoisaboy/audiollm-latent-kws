@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "audiollm-latent-kws"
-version = "0.1.0"
+version = "0.3.0"
 description = "Training-free open-vocabulary dialect keyword search with frozen Audio-LLM latents"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,7 +30,16 @@ audiollm-latent-kws = "cli:main"
 
 [tool.setuptools]
 py-modules = ["cli"]
-packages = ["common", "locator", "reranker", "analysis", "integration"]
+packages = [
+  "common",
+  "locator",
+  "reranker",
+  "analysis",
+  "integration",
+  "experiments",
+  "experiments.legacy",
+  "examples",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

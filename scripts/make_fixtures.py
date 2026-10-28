@@ -54,13 +54,15 @@ def main() -> int:
         onset = 3 + (utterance_index % 6)
         frames[onset : onset + 5] += centers[word] + rng.normal(scale=0.02, size=(5, args.dimensions))
         np.save(root / "search" / f"{utterance}.npy", frames.astype(np.float16))
+        token_start = onset * 2 - 3
         search_rows.append(
             {
                 "utt": utterance,
                 "text": transcript,
                 "gold": [{"word": word, "kw_t0": onset * FRAME_S, "kw_t1": (onset + 5) * FRAME_S}],
                 "tokens": [
-                    (position + onset * 2, symbol) for position, symbol in enumerate(transcript)
+                    (position + token_start, symbol)
+                    for position, symbol in enumerate(transcript)
                 ],
             }
         )

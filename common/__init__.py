@@ -3,7 +3,6 @@
 from .config import (
     DEFAULT_POOL_TOP,
     FRAME_S,
-    GROW_DELTA,
     GRID_SNAP_TOL,
     LAMBDA_LM,
     LATENT_LAYER,
@@ -12,13 +11,12 @@ from .config import (
     READ_FRAME_S,
     Z_EPS,
 )
-from .io import read_json, read_jsonl, write_json, write_jsonl
+from .io import read_jsonl, write_json, write_jsonl
 from .scoring import fuse, rank_of, zpool
 
 __all__ = [
     "DEFAULT_POOL_TOP",
     "FRAME_S",
-    "GROW_DELTA",
     "GRID_SNAP_TOL",
     "LAMBDA_LM",
     "LATENT_LAYER",
@@ -28,7 +26,6 @@ __all__ = [
     "Z_EPS",
     "fuse",
     "rank_of",
-    "read_json",
     "read_jsonl",
     "write_json",
     "write_jsonl",

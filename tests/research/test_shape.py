@@ -1,6 +1,6 @@
 import numpy as np
 
-from analysis.shape import (
+from experiments.shape import (
     dtw_distance,
     first_difference,
     resample,

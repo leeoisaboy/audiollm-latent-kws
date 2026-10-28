@@ -39,7 +39,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from locator.templates import _kmeans_prototypes
+from experiments.legacy.templates import _kmeans_prototypes
 
 FRAME_S = 0.08
 EPS = 1e-8

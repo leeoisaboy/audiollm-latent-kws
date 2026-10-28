@@ -1,0 +1,77 @@
+{
+  "config": "k8_mean",
+  "calibration": "none",
+  "pool_top": 20,
+  "fusion": {
+    "llm2:1": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.9343403205918619,
+      "top1": 0.47318125770653513,
+      "top1_words": 0.5522988160704861,
+      "top5": 0.7953144266337855,
+      "top20": 0.9343403205918619,
+      "rank_median": 1.0
+    },
+    "llm1:1": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.936189889025894,
+      "top1": 0.4808877928483354,
+      "top1_words": 0.5579966359451576,
+      "top5": 0.7980887792848336,
+      "top20": 0.936189889025894,
+      "rank_median": 1.0
+    },
+    "llm1:0.5,llm2:0.5": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.936806411837238,
+      "top1": 0.47780517879161527,
+      "top1_words": 0.5600783810047213,
+      "top5": 0.7950061652281134,
+      "top20": 0.936806411837238,
+      "rank_median": 1.0
+    },
+    "llm1:0.3,llm2:0.7": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.9355733662145499,
+      "top1": 0.4774969173859433,
+      "top1_words": 0.556823251045644,
+      "top5": 0.7971639950678175,
+      "top20": 0.9355733662145499,
+      "rank_median": 1.0
+    },
+    "llm1:0.7,llm2:0.3": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.9386559802712701,
+      "top1": 0.47934648581997535,
+      "top1_words": 0.5587485533835527,
+      "top5": 0.7968557336621455,
+      "top20": 0.9386559802712701,
+      "rank_median": 1.0
+    },
+    "llm2:0.7,llm6:0.3": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.9278668310727497,
+      "top1": 0.469482120838471,
+      "top1_words": 0.5466409653187775,
+      "top5": 0.780826140567201,
+      "top20": 0.9278668310727497,
+      "rank_median": 1.0
+    },
+    "llm1:0.5,llm2:0.3,llm6:0.2": {
+      "n_occurrences": 3244,
+      "missing_templates": 0,
+      "pool_recall": 0.9352651048088779,
+      "top1": 0.4759556103575832,
+      "top1_words": 0.5536378522236118,
+      "top5": 0.7891491985203453,
+      "top20": 0.9352651048088779,
+      "rank_median": 1.0
+    }
+  }
+}

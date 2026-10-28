@@ -38,9 +38,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from analysis.evaluation import occurrence_metrics
 from common.scoring import fuse, rank_of, zpool
-from locator import DirectoryLatentStore, build_templates, nms_starts, window_means
-from locator.templates import l2_normalize
-from reranker.align import build_contexts, load_reading
+from experiments.legacy.align import build_contexts
+from experiments.legacy.search import nms_starts, window_means
+from experiments.legacy.templates import (
+    DirectoryLatentStore,
+    build_templates,
+    l2_normalize,
+)
+from reranker.align import load_reading
 
 
 def read_jsonl(path: Path) -> list[dict]:

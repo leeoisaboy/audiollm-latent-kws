@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from analysis.layer_probe import (
+from experiments.layer_probe import (
     compare_layer_fusions,
     compare_layers,
     stage1_metrics,

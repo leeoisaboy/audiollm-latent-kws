@@ -2,19 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterable
 
 
 def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     with open(path, "r", encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
-
-
-def iter_jsonl(path: str | Path) -> Iterator[dict[str, Any]]:
-    with open(path, "r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                yield json.loads(line)
 
 
 def write_jsonl(path: str | Path, rows: Iterable[dict[str, Any]]) -> None:
@@ -24,11 +17,6 @@ def write_jsonl(path: str | Path, rows: Iterable[dict[str, Any]]) -> None:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")))
             handle.write("\n")
-
-
-def read_json(path: str | Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as handle:
-        return json.load(handle)
 
 
 def write_json(path: str | Path, value: dict[str, Any]) -> None:

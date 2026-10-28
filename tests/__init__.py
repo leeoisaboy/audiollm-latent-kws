@@ -1,1 +1,1 @@
-"""CPU-only behavioral checks."""
+"""CPU-only behavioral checks for the production pipeline."""

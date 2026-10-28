@@ -34,7 +34,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from analysis.shape import (
+from experiments.shape import (
     first_difference,
     resample,
     shift_invariant_similarity,
