@@ -158,17 +158,140 @@ Weights, restricted audio, speaker identities, and recognizer output are not dis
 
 ## Code structure
 
-The `v3` layout separates the final path from the experiment history.
+The `v3` layout separates the final runtime path from the experiment record. The first part is enough for normal use; the second part supports result checks and reruns. Each `__init__.py` only exports the public interface of its package and is not listed separately below.
 
-| Path | Purpose |
+### Directory tree
+
+```text
+audiollm-latent-kws-v3/
+├── cli.py                         command-line entry for five subcommands
+├── pyproject.toml                 dependencies, packaging, command declaration
+├── README.md / README.en.md       Chinese and English project pages
+├── LICENSE                        Apache-2.0 license
+├── SECURITY.md                    privacy and security notes
+├── CONTRIBUTING.md                contribution notes
+├── .github/workflows/ci.yml       tests on Python 3.11 and 3.12
+├── common/                        shared runtime code
+│   ├── config.py                  fixed parameters and time grids
+│   ├── io.py                      JSON and JSONL input/output
+│   └── scoring.py                 normalization, fusion, and ranks
+├── locator/                       Stage 1, acoustic template search
+│   ├── templates.py               build one mean template per word
+│   ├── calibration.py             remove the enrollment-wide offset
+│   └── search.py                  8-frame window, cosine score, top-20
+├── reranker/                      Stage 2, left-context rescoring
+│   ├── align.py                   40 ms character-grid snap, optional pinyin
+│   └── scoring.py                 candidate scoring and rerank flow
+├── analysis/                      evaluation and error checks
+│   ├── evaluation.py              pool recall, top-1, word-level metrics
+│   └── audit.py                   first-character leakage audit
+├── integration/                   frozen-model integration
+│   ├── step_audio2.py             feature export, scoring, cache reuse
+│   └── low_memory_safetensors.py  low-memory weight loading
+├── examples/
+│   └── dummy_scorer.py            fixed fake scores for CLI smoke tests
+├── experiments/                   variants outside the default path
+│   ├── layer_probe.py             layer and layer-fusion comparison
+│   ├── shape.py                   differencing, resampling, DTW, entropy gate
+│   ├── text_prior.py              text-only calibration scorer
+│   └── legacy/                    old search, alignment, templates, calibration
+│       ├── search.py              window growth, multiscale search, NMS
+│       ├── align.py               old left-context variants
+│       ├── templates.py           k-means sub-templates and old template store
+│       ├── calibration.py         component removal and PCA whitening
+│       └── layers.py              multi-layer configuration and loading
+├── scripts/                       real-corpus experiments and reproduction
+│   ├── make_fixtures.py           generate synthetic fixtures
+│   ├── stage1_cv.py               grouped Stage-1 cross-validation
+│   ├── stage1_real_ablation.py    window, centering, whitening, template comparison
+│   ├── stage1_grow_real.py        peak-neighborhood window growth
+│   ├── stage1_layer_fusion_real.py    layer-score fusion
+│   ├── stage2_real_ablation.py    pinyin, two starts, text prior, leakage
+│   ├── lambda_sweep.py            language-model weight sweep and intervals
+│   ├── lambda_cv.py               weight selection and held-out validation
+│   ├── shape_gate_real.py         temporal-shape weighting on real data
+│   ├── shape_gate_cv.py           temporal-shape cross-validation
+│   ├── shape_dtw_real.py          DTW and subsequence DTW
+│   └── benchmark_kv_cache.py      latency, memory, and ranking parity
+├── tests/                         default-path unit tests
+│   ├── test_locator.py            templates, centering, windows, pool search
+│   ├── test_alignment.py          grid snap, pinyin matching, prefixes
+│   ├── test_scoring.py            normalization, ranks, fusion, leakage
+│   ├── test_step_audio2_guard.py  half-precision linear guard
+│   └── research/                  experiment-branch tests
+│       ├── test_layer_probe.py    layer comparison and fusion
+│       ├── test_shape.py          shape operators and DTW
+│       └── test_shape_gate.py     shape gating and baseline scores
+├── data/                          schema examples and synthetic inputs
+├── docs/                          architecture, models, reproduction, results
+└── reports/                       JSON evidence and report index
+```
+
+### Final runtime path
+
+| File | Purpose |
 |---|---|
-| `locator/` | final Stage-1 mean templates, centering, fixed 8-frame search, top-20 pools |
-| `reranker/` | final Stage-2 grid snapping, optional pinyin matching, scoring |
-| `analysis/` | pool evaluation and prefix-leakage audit |
-| `integration/` | Step-Audio-2 feature export, KV cache, low-memory loading |
-| `experiments/` | old experiments, temporal-shape experiments, layer analysis, rejected variants |
-| `scripts/` | real-corpus ablations, cross-validation, weight sweep, cache benchmark |
-| `tests/` | production tests; `tests/research/` keeps research-branch tests |
+| `cli.py` | Provides `locate`, `evaluate`, `rerank`, `fuse`, and `audit`; loads arguments, calls each stage, and writes results. |
+| `common/config.py` | Holds acoustic and text frame lengths, the feature layer, window length, pool size, and language-model weight. |
+| `common/io.py` | Reads and writes JSON and JSONL. |
+| `common/scoring.py` | Normalizes pool scores, fuses acoustic and language-model terms, and computes ranks. |
+| `locator/templates.py` | Builds word templates by averaging frames inside each take, then averaging takes for the same word; also records duration and take count. |
+| `locator/calibration.py` | Estimates and removes a global enrollment mean. The final path uses mean centering only. |
+| `locator/search.py` | Runs an 8-frame mean window over an utterance, scores cosine similarity against templates, keeps the best start per word, and returns the top 20 words. |
+| `reranker/align.py` | Reads the 40 ms character grid, snaps a candidate start to a character boundary, and optionally matches a nearby pronunciation through Mandarin pinyin. |
+| `reranker/scoring.py` | Defines the scorer interface, walks the candidate pool, calls the model, and collects rerank results. |
+| `analysis/evaluation.py` | Computes top-20 pool recall, occurrence top-1, and word-level metrics. |
+| `analysis/audit.py` | Compares nearest-frame cuts with character-grid cuts and counts first-character leakage in the prefix. |
+| `integration/step_audio2.py` | Loads the frozen Step-Audio-2, exports layer features, implements the rerank scorer, and reuses the audio-prefix cache. |
+| `integration/low_memory_safetensors.py` | Loads safetensors weights lazily or with lower memory use. |
+
+### Experiment modules
+
+| File | Purpose |
+|---|---|
+| `experiments/layer_probe.py` | Compares layers and layer-fusion variants by separation, top-1, and pool recall. |
+| `experiments/shape.py` | Resampling, first differences, shape templates, cosine distance, DTW, subsequence DTW, and entropy gating. |
+| `experiments/text_prior.py` | Text-only calibration scorer kept for the rejected text-prior experiment. |
+| `experiments/legacy/align.py` | Old context-splitting variants, including no-prefix, prefix, and cross-word branches. |
+| `experiments/legacy/calibration.py` | Old component-removal and PCA-whitening calibrations. |
+| `experiments/legacy/layers.py` | Old multi-layer fusion settings and feature loading. |
+| `experiments/legacy/search.py` | Old search with window growth, multiscale scoring, alternate starts, and non-maximum suppression. |
+| `experiments/legacy/templates.py` | Old template construction with k-means sub-templates and a directory feature store. |
+
+### Reproduction scripts
+
+| File | Purpose |
+|---|---|
+| `scripts/make_fixtures.py` | Generates synthetic features, enrollment rows, search rows, and readings to verify the CLI wiring. |
+| `scripts/stage1_cv.py` | Grouped cross-validation for Stage-1 window length and centering. |
+| `scripts/stage1_real_ablation.py` | Stage-1 real-corpus comparisons over windows, centering, whitening, templates, and layers. |
+| `scripts/stage1_grow_real.py` | Window growth around score peaks. |
+| `scripts/stage1_layer_fusion_real.py` | Layer-score fusion. |
+| `scripts/stage2_real_ablation.py` | Stage-2 pinyin matching, two starts, text-prior calibration, and prefix leakage. |
+| `scripts/lambda_sweep.py` | Language-model weight sweep with paired intervals. |
+| `scripts/lambda_cv.py` | Weight selection on training folds and validation on held-out data. |
+| `scripts/shape_gate_real.py` | Temporal-shape weighting on real data. |
+| `scripts/shape_gate_cv.py` | Temporal-shape cross-validation and weight selection. |
+| `scripts/shape_dtw_real.py` | Dynamic time warping and subsequence dynamic time warping. |
+| `scripts/benchmark_kv_cache.py` | Latency, peak memory, and ranking parity for cached and full-sequence scoring. |
+
+### Tests and support files
+
+| File | Purpose |
+|---|---|
+| `examples/dummy_scorer.py` | Deterministic fake scorer for CLI and fusion smoke tests; it is not accuracy evidence. |
+| `tests/test_locator.py` | Checks mean templates, centering, window shapes, and pool localization. |
+| `tests/test_alignment.py` | Checks grid snapping, pinyin matching, and prefix construction. |
+| `tests/test_scoring.py` | Checks normalization, ties, score fusion, and leakage counting. |
+| `tests/test_step_audio2_guard.py` | Checks the half-precision linear guard and skips when `torch` is absent. |
+| `tests/research/test_layer_probe.py` | Checks layer comparison and fusion results. |
+| `tests/research/test_shape.py` | Checks shape operators, DTW, and entropy gating. |
+| `tests/research/test_shape_gate.py` | Checks shape weighting and baseline scores. |
+| `pyproject.toml` | Declares the package, version, dependencies, optional extras, and command entry point. |
+| `data/` | Provides schema examples and synthetic fixtures without private audio. |
+| `docs/` | Architecture, model, reproduction, and full-result documentation. |
+| `reports/` | JSON experiment results; `reports/README.md` maps reports to conclusions. |
+| `.github/workflows/ci.yml` | Installs the package and runs tests on Python 3.11 and 3.12. |
 
 ## Tests
 

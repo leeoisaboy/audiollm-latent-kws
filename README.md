@@ -202,17 +202,140 @@ python integration/step_audio2.py \
 
 ## 代码结构
 
-`v3` 将最终方案和实验过程分开，读者可以先看主流程，再看实验分支。
+`v3` 把最终运行路径和实验记录分开。日常使用只需要看前半部分；核对结论或重跑对照实验时，再看后半部分。各目录的 `__init__.py` 只负责导出本目录接口，下面不再逐项列出。
 
-| 目录 | 用途 |
+### 目录树
+
+```text
+audiollm-latent-kws-v3/
+├── cli.py                         命令行入口，串联五个子命令
+├── pyproject.toml                 依赖、打包和命令声明
+├── README.md / README.en.md       中文与英文展示说明
+├── LICENSE                        Apache-2.0 许可
+├── SECURITY.md                    隐私与安全说明
+├── CONTRIBUTING.md                贡献说明
+├── .github/workflows/ci.yml       Python 3.11、3.12 自动测试
+├── common/                        主流程共用代码
+│   ├── config.py                  固定参数与时间网格
+│   ├── io.py                      JSON、JSONL 读写
+│   └── scoring.py                 标准化、融合和名次
+├── locator/                       第一阶段，用声学模板找候选
+│   ├── templates.py               生成每个词的平均模板
+│   ├── calibration.py             扣除注册集整体偏移
+│   └── search.py                  8 帧滑窗、余弦相似度、前 20 个候选
+├── reranker/                      第二阶段，结合左侧文字重排
+│   ├── align.py                   40 毫秒文字网格吸附，可选拼音近似
+│   └── scoring.py                 候选打分与重排流程
+├── analysis/                      结果评估与错误检查
+│   ├── evaluation.py              候选召回、排第一比例、词级指标
+│   └── audit.py                   检查目标词首字是否泄漏到前缀
+├── integration/                   冻结模型接入
+│   ├── step_audio2.py             特征导出、候选打分、缓存复用
+│   └── low_memory_safetensors.py  低显存权重加载
+├── examples/
+│   └── dummy_scorer.py            固定假分数，仅用于跑通命令行
+├── experiments/                   未进入默认路径的实验
+│   ├── layer_probe.py             不同层与层融合比较
+│   ├── shape.py                   一阶差分、重采样、DTW、熵门控
+│   ├── text_prior.py              只用文字先验的校准打分
+│   └── legacy/                    旧版搜索、对齐、模板和校准
+│       ├── search.py              窗口生长、多尺度搜索、多个起点、非极大值抑制
+│       ├── align.py               旧版多种上下文切分策略
+│       ├── templates.py           K 均值子模板与旧模板库
+│       ├── calibration.py         去主成分与主成分白化
+│       └── layers.py              多层特征配置与读取
+├── scripts/                       真实语料实验与复现入口
+│   ├── make_fixtures.py           生成合成夹具
+│   ├── stage1_cv.py               第一阶段分组交叉验证
+│   ├── stage1_real_ablation.py    第一阶段窗口、去均值、白化和多模板对比
+│   ├── stage1_grow_real.py        峰值邻域扩展窗口实验
+│   ├── stage1_layer_fusion_real.py    层分数融合实验
+│   ├── stage2_real_ablation.py    第二阶段拼音、双起点、文本先验和泄漏对比
+│   ├── lambda_sweep.py            语言模型权重扫描与置信区间
+│   ├── lambda_cv.py               先选权重，再做留出验证
+│   ├── shape_gate_real.py         时序形状加权的真实语料实验
+│   ├── shape_gate_cv.py           时序形状加权的交叉验证
+│   ├── shape_dtw_real.py          动态时间规整与子序列动态时间规整
+│   └── benchmark_kv_cache.py      缓存与全序列的延迟、显存和一致性基准
+├── tests/                         默认路径的单元测试
+│   ├── test_locator.py            模板、去均值、窗口与候选定位
+│   ├── test_alignment.py          文字网格、拼音近似与前缀构造
+│   ├── test_scoring.py            标准化、排名、融合与泄漏统计
+│   ├── test_step_audio2_guard.py  半精度线性层保护
+│   └── research/                  实验分支测试
+│       ├── test_layer_probe.py    层比较与层融合
+│       ├── test_shape.py          形状算子和动态时间规整
+│       └── test_shape_gate.py     形状门控与基线分数
+├── data/                          数据格式示例与合成输入，不含私有音频
+├── docs/                          架构、模型、复现与完整结果说明
+└── reports/                       JSON 实验报告与证据索引
+```
+
+### 最终运行路径
+
+| 文件 | 作用 |
 |---|---|
-| `locator/` | 最终版第一阶段，均值模板、去均值、固定 8 帧滑窗、前 20 个候选 |
-| `reranker/` | 最终版第二阶段，文字网格对齐、可选拼音近似、单分支打分 |
-| `analysis/` | 候选池评估与前缀首字泄漏检查 |
-| `integration/` | Step-Audio-2 特征导出、中间状态缓存（KV Cache）和低显存加载 |
-| `experiments/` | 旧实验、时序形状实验、层分析和已淘汰方案 |
-| `scripts/` | 真实语料上的对比实验、交叉验证、权重扫描与缓存基准 |
-| `tests/` | 最终路径的单元测试；`tests/research/` 保留实验分支测试 |
+| `cli.py` | 提供 `locate`、`evaluate`、`rerank`、`fuse`、`audit` 五个子命令，读取参数、调用各阶段并写出结果。 |
+| `common/config.py` | 统一管理声学帧长、文字帧长、特征层、窗口长度、候选数和语言模型权重。 |
+| `common/io.py` | 读写 JSON 和 JSONL。 |
+| `common/scoring.py` | 候选池内标准化、声学分与语言模型分融合、名次计算。 |
+| `locator/templates.py` | 从注册特征生成词模板；先在每条录音内求帧均值，再对同一个词的多次录音求平均，同时记录平均时长和样本数。 |
+| `locator/calibration.py` | 从注册特征估计全局均值并扣除，减少整段录音共同偏移的影响；最终路径只使用均值扣除。 |
+| `locator/search.py` | 对整句做 8 帧滑窗，计算窗口均值与模板的余弦相似度，取每个词的最高分起点，再保留前 20 个候选。 |
+| `reranker/align.py` | 读取 40 毫秒文字网格，把候选起点吸附到字符边界；可选普通话拼音近似匹配，处理同音或近音首字。 |
+| `reranker/scoring.py` | 定义候选打分接口，遍历候选池、调用具体模型并收集重排结果。 |
+| `analysis/evaluation.py` | 计算前 20 候选召回、每次出现排第一的比例和按词平均的指标。 |
+| `analysis/audit.py` | 对比按最近帧硬切和按文字网格切开两种上下文，统计目标词首字出现在前缀中的比例。 |
+| `integration/step_audio2.py` | 加载冻结的 Step-Audio-2，导出多层隐状态，实现重排打分器，并在相同音频前缀上复用中间状态。 |
+| `integration/low_memory_safetensors.py` | 延迟加载和低显存加载 safetensors 权重，方便显存较小的机器运行。 |
+
+### 实验模块
+
+| 文件 | 作用 |
+|---|---|
+| `experiments/layer_probe.py` | 比较不同层和不同层融合方案的候选区分度、排第一比例与候选召回。 |
+| `experiments/shape.py` | 重采样、一阶差分、形状模板、余弦距离、动态时间规整、子序列动态时间规整和熵门控。 |
+| `experiments/text_prior.py` | 只用文字先验的校准打分器，用于记录已淘汰的校准实验。 |
+| `experiments/legacy/align.py` | 旧版多种上下文切分策略，包括无左文境、前缀和跨词切分等分支。 |
+| `experiments/legacy/calibration.py` | 去主成分和主成分白化等旧校准方案。 |
+| `experiments/legacy/layers.py` | 旧版多层融合配置和层特征读取。 |
+| `experiments/legacy/search.py` | 旧版搜索，包括窗口生长、多尺度搜索、多个起点和非极大值抑制。 |
+| `experiments/legacy/templates.py` | 旧版模板构建，包括 K 均值子模板和目录特征读取。 |
+
+### 复现脚本
+
+| 文件 | 作用 |
+|---|---|
+| `scripts/make_fixtures.py` | 生成合成特征、注册清单、检索清单和文字阅读结果，检查命令行接口是否串通。 |
+| `scripts/stage1_cv.py` | 第一阶段窗口长度和去均值的分组交叉验证。 |
+| `scripts/stage1_real_ablation.py` | 第一阶段真实语料对比实验，覆盖窗口、去均值、白化、多模板和层选择。 |
+| `scripts/stage1_grow_real.py` | 在峰值附近扩展窗口的对比实验。 |
+| `scripts/stage1_layer_fusion_real.py` | 多层分数融合实验。 |
+| `scripts/stage2_real_ablation.py` | 第二阶段真实语料实验，覆盖拼音近似、双起点、文本先验校准和前缀泄漏。 |
+| `scripts/lambda_sweep.py` | 扫描语言模型权重并计算配对置信区间。 |
+| `scripts/lambda_cv.py` | 先在训练折上选择权重，再在留出数据上验证。 |
+| `scripts/shape_gate_real.py` | 时序形状加权的真实语料实验。 |
+| `scripts/shape_gate_cv.py` | 时序形状加权的交叉验证与权重选择。 |
+| `scripts/shape_dtw_real.py` | 动态时间规整和子序列动态时间规整实验。 |
+| `scripts/benchmark_kv_cache.py` | 缓存与全序列的延迟、峰值显存和排序一致性基准。 |
+
+### 测试与辅助文件
+
+| 文件 | 作用 |
+|---|---|
+| `examples/dummy_scorer.py` | 确定性假打分器，只用于跑通命令行和融合流程，不代表真实准确率。 |
+| `tests/test_locator.py` | 检查平均模板、去均值、窗口形状和候选定位。 |
+| `tests/test_alignment.py` | 检查文字网格吸附、拼音近似匹配和候选前缀构造。 |
+| `tests/test_scoring.py` | 检查标准化、并列名次、分数融合和泄漏统计。 |
+| `tests/test_step_audio2_guard.py` | 检查半精度线性层保护逻辑；没有 `torch` 时自动跳过。 |
+| `tests/research/test_layer_probe.py` | 检查层比较和层融合结果。 |
+| `tests/research/test_shape.py` | 检查形状算子、动态时间规整和熵门控。 |
+| `tests/research/test_shape_gate.py` | 检查形状加权与基线分数。 |
+| `pyproject.toml` | 声明包名、版本、依赖、可选依赖和命令行入口。 |
+| `data/` | 提供清单、模板和合成夹具的格式示例，不包含私有音频。 |
+| `docs/` | 架构、模型、复现步骤和完整实验结果的说明。 |
+| `reports/` | 保存各实验的 JSON 结果；`reports/README.md` 说明报告与结论的对应关系。 |
+| `.github/workflows/ci.yml` | 在 Python 3.11 和 3.12 上安装项目并运行测试。 |
 
 关键证据文件如下。
 
