@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1600, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      width: 1600px;
+      height: 900px;
+      margin: 0;
+      overflow: hidden;
+    }
+    body {
+      position: relative;
+      color: #082b5d;
+      font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      background:
+        radial-gradient(circle at 12% 11%, rgba(225, 238, 255, .82), transparent 39%),
+        radial-gradient(circle at 87% 67%, rgba(215, 246, 237, .74), transparent 39%),
+        linear-gradient(132deg, #f8f9fb 0%, #f6f7fa 54%, #edf9f9 100%);
+    }
+    .title {
+      position: absolute;
+      left: 61px;
+      top: 42px;
+      font-size: 61px;
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: -2px;
+      color: #012b5d;
+    }
+    .subtitle {
+      position: absolute;
+      left: 63px;
+      top: 128px;
+      font-size: 29px;
+      font-weight: 400;
+      color: #2d3b4e;
+    }
+    .rule {
+      position: absolute;
+      left: 62px;
+      top: 181px;
+      width: 299px;
+      height: 7px;
+      border-radius: 99px;
+      background: #e94d4d;
+    }
+    .card {
+      position: absolute;
+      overflow: hidden;
+      border: 1px solid rgba(212, 226, 238, .84);
+      border-radius: 25px;
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 15px 33px rgba(35, 59, 88, .09);
+    }
+    .cut-card {
+      left: 60px;
+      width: 890px;
+      height: 294px;
+    }
+    .cut-card.naive { top: 211px; }
+    .cut-card.snapped { top: 529px; }
+    .cut-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 8px;
+      height: 100%;
+    }
+    .naive::before { background: #e84c4c; }
+    .snapped::before { background: #16aa76; }
+    .panel-title {
+      position: absolute;
+      left: 42px;
+      top: 27px;
+      font-size: 34px;
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -.8px;
+    }
+    .panel-title .mark {
+      display: inline-block;
+      min-width: 39px;
+      font-weight: 900;
+    }
+    .naive .panel-title { color: #092d62; }
+    .snapped .panel-title { color: #082d62; }
+    .panel-desc {
+      position: absolute;
+      left: 42px;
+      top: 79px;
+      font-size: 21px;
+      color: #3a4658;
+    }
+    .badge {
+      position: absolute;
+      right: 27px;
+      top: 27px;
+      padding: 8px 17px 9px;
+      border-radius: 99px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .badge.red {
+      color: #d53c3c;
+      background: #fee5e6;
+    }
+    .badge.green {
+      color: #087f59;
+      background: #dff7ee;
+    }
+    .char-line {
+      position: absolute;
+      left: 76px;
+      top: 139px;
+      width: 705px;
+      height: 66px;
+    }
+    .char {
+      position: absolute;
+      top: 13px;
+      width: 44px;
+      text-align: center;
+      font-size: 48px;
+      line-height: 1;
+      font-weight: 700;
+      color: #092d62;
+    }
+    .char::before {
+      content: "";
+      position: absolute;
+      left: 21px;
+      top: -15px;
+      width: 2px;
+      height: 13px;
+      background: #b9d7ea;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .4);
+    }
+    .char.c1 { left: 0; }
+    .char.c2 { left: 100px; }
+    .char.c3 { left: 200px; }
+    .char.c4 { left: 300px; }
+    .char.c5 { left: 400px; }
+    .char.c6 { left: 500px; }
+    .char.c7 { left: 600px; }
+    .char.red { color: #e84c4c; }
+    .char.green { color: #0da66f; }
+    .cut-line {
+      position: absolute;
+      top: 134px;
+      width: 4px;
+      height: 73px;
+      border-radius: 99px;
+    }
+    .cut-line.red {
+      left: 428px;
+      background: #e84c4c;
+    }
+    .cut-line.green {
+      left: 366px;
+      background: #0da66f;
+    }
+    .cut-label {
+      position: absolute;
+      top: 123px;
+      padding: 4px 11px 5px;
+      border-radius: 7px;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .cut-label.red { left: 397px; background: #e84c4c; }
+    .cut-label.green { left: 335px; background: #0da66f; }
+    .prefix {
+      position: absolute;
+      left: 42px;
+      top: 217px;
+      font-size: 20px;
+      color: #344156;
+    }
+    .prefix b { color: #092d62; }
+    .note {
+      position: absolute;
+      top: 217px;
+      font-size: 19px;
+      color: #27374e;
+    }
+    .note.red { left: 362px; }
+    .note.red b { color: #e84c4c; }
+    .note.green { left: 320px; }
+    .note.green b { color: #0da66f; }
+    .why-card {
+      left: 985px;
+      top: 211px;
+      width: 555px;
+      height: 294px;
+      padding: 28px 32px;
+    }
+    .why-title {
+      font-size: 31px;
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -.7px;
+    }
+    .why-copy {
+      margin-top: 19px;
+      font-size: 20px;
+      line-height: 1.63;
+      color: #25344b;
+    }
+    .why-copy p { margin: 0 0 12px; }
+    .why-copy p:last-child { margin-bottom: 0; }
+    .dog-ellipse {
+      position: absolute;
+      left: 1190px;
+      top: 696px;
+      width: 350px;
+      height: 145px;
+      border-radius: 50%;
+      background: rgba(196, 238, 223, .84);
+      transform: rotate(-4deg);
+    }
+    .dog {
+      position: absolute;
+      left: 1229px;
+      top: 527px;
+      width: 282px;
+      height: auto;
+      filter: drop-shadow(0 12px 13px rgba(24, 61, 74, .13));
+    }
+    .glass {
+      position: absolute;
+      left: 1006px;
+      top: 508px;
+      width: 170px;
+      height: 182px;
+      overflow: visible;
+    }
+    .callout {
+      position: absolute;
+      left: 981px;
+      top: 713px;
+      width: 170px;
+      height: 97px;
+      padding-top: 15px;
+      border-radius: 20px;
+      background: #e6f7f2;
+      color: #0f7e61;
+      text-align: center;
+      font-size: 23px;
+      line-height: 1.45;
+      font-weight: 800;
+    }
+    .footer {
+      position: absolute;
+      left: 62px;
+      top: 852px;
+      font-size: 18px;
+      color: #748194;
+      letter-spacing: .1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">两套时间网格容易错位</div>
+  <div class="subtitle">同一个关键词边界，落在两套不同的时间网格上</div>
+  <div class="rule"></div>
+  <section class="card cut-card naive">
+    <div class="panel-title"><span class="mark">直接切</span></div>
+    <div class="panel-desc">声学窗口的起点直接切在 40 毫秒文字网格上</div>
+    <div class="badge red">35.2% 首字泄漏</div>
+    <div class="char-line">
+      <span class="char c1">请</span>
+      <span class="char c2">帮</span>
+      <span class="char c3">我</span>
+      <span class="char c4 red">开</span>
+      <span class="char c5">灯</span>
+      <span class="char c6">现</span>
+      <span class="char c7">在</span>
+    </div>
+    <div class="cut-label red">切点</div>
+    <div class="cut-line red"></div>
+    <div class="prefix">前缀 = <b>请 帮 我 开</b></div>
+    <div class="note red">“开”已经留在前缀里</div>
+  </section>
+  <section class="card cut-card snapped">
+    <div class="panel-title"><span class="mark">先吸附</span></div>
+    <div class="panel-desc">找到候选首字，再把切点对齐到字符边界</div>
+    <div class="badge green">3.4% 首字泄漏</div>
+    <div class="char-line">
+      <span class="char c1">请</span>
+      <span class="char c2">帮</span>
+      <span class="char c3">我</span>
+      <span class="char c4 green">开</span>
+      <span class="char c5">灯</span>
+      <span class="char c6">现</span>
+      <span class="char c7">在</span>
+    </div>
+    <div class="cut-label green">吸附</div>
+    <div class="cut-line green"></div>
+    <div class="prefix">前缀 = <b>请 帮 我</b></div>
+    <div class="note green">边界落在 <b>“开”</b> 之前</div>
+  </section>
+  <section class="card why-card">
+    <div class="why-title">为什么分数会下降</div>
+    <div class="why-copy">
+      <p>语言模型会顺着已经看到的字继续猜。直接切会把“开”留在前缀里，等于提前告诉它答案。</p>
+      <p>先吸附到字符边界，切点停在“开”之前。模型、候选池和融合权重都不用改。</p>
+    </div>
+  </section>
+  <div class="dog-ellipse"></div>
+  <img class="dog" src="../mascot.png" alt="小狗">
+  <svg class="glass" viewBox="0 0 170 182" aria-hidden="true">
+    <circle cx="68" cy="63" r="52" fill="rgba(242, 253, 253, .28)" stroke="#082d65" stroke-width="15"/>
+    <circle cx="68" cy="63" r="49" fill="none" stroke="#8edcf1" stroke-width="3"/>
+    <line x1="107" y1="101" x2="158" y2="151" stroke="#082d65" stroke-width="23" stroke-linecap="round"/>
+  </svg>
+  <div class="callout">先吸附<br>再打分</div>
+  <div class="footer">80 毫秒声学帧 · 40 毫秒文字阅读 · ±6 帧吸附容差 · 无需训练</div>
+</body>
+</html>

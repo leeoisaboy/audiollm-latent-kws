@@ -48,6 +48,12 @@ The `4.0` multiplies the language-model term; the acoustic term remains at 1. Th
 
 Audio features use 80 ms frames. The external text reader uses a 40 ms character grid. A naive nearest-frame cut often leaves the target word's first character in the left context, effectively leaking part of the answer.
 
+<p align="center">
+  <img src="docs/assets/grid_alignment_spotlight.png" alt="A dog illustration comparing a naive nearest-frame cut with a cut snapped to the character grid" width="900">
+</p>
+
+Figure 1. A direct nearest-frame cut can leave the target's first character in the prefix; snapping to the character grid moves the boundary before the word.
+
 On 3244 real occurrences:
 
 | Left-context cut | Target first character appears in prefix |
