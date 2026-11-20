@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fbfbfd" />
+  <meta name="description" content="Latent-KWS Audit Studio：两阶段隐空间检索与双时间网格对齐白盒审计台。" />
+  <title>Latent-KWS Audit Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=Noto+Sans+SC:wght@400..700&amp;family=Roboto+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230071e3'/%3E%3Cpath d='M5 7h14M5 12h9M5 17h14M16 10l3 2-3 2' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="static/studio.css?v=audit-20261120" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="./" aria-label="Latent-KWS Audit Studio 首页">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16M4 12h10M4 17h16" />
+            <path d="M16.5 9.5 20 12l-3.5 2.5" />
+          </svg>
+        </span>
+        <span class="brand__text"><strong>Latent-KWS</strong><span>Audit Studio</span></span>
+      </a>
+
+      <div class="topbar__meta">
+        <span class="live-pill">
+          <span class="status-dot is-live" aria-hidden="true"></span>
+          <span id="auditSourceBadge">实证语料 · 3,244 样本</span>
+        </span>
+        <a class="compact-button compact-button--hide-small" href="https://leeoisaboy.github.io/disentangle-acoustic-print/" target="_blank" rel="noopener">
+          <span>姐妹项目 · Acoustic Print ↗</span>
+        </a>
+        <button id="btnOpenLocalAudit" type="button" class="compact-button compact-button--accent" aria-expanded="false" aria-controls="localAuditDrawer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" />
+            <path d="M5 15.5v2A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-2" />
+          </svg>
+          <span>拖入本地 JSONL 审计</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="story">
+    <section id="localAuditDrawer" class="drawer-shell" aria-hidden="true">
+      <div class="drawer-shell__inner">
+        <div class="drawer drawer--plain">
+          <div class="drawer__head">
+            <div>
+              <h2>本地 JSONL 零上传审计</h2>
+              <p>直接拖入 <code>cli.py locate / rerank / audit</code> 生成的 <code>pool.jsonl</code>、<code>lm.jsonl</code> 或 <code>readings.jsonl</code>，数据仅在当前浏览器内存中解析，绝不上传。</p>
+            </div>
+            <button id="btnCloseLocalAudit" type="button" class="drawer__close" aria-label="关闭本地审计">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" /></svg>
+            </button>
+          </div>
+          <div id="jsonlDropZone" class="dropzone" tabindex="0">
+            <input id="jsonlFileInput" type="file" accept=".jsonl,.json" multiple class="sr-only" />
+            <div class="dropzone__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <polyline points="9 15 12 12 15 15" />
+              </svg>
+            </div>
+            <div class="dropzone__copy">
+              <strong>将 pool.jsonl / lm.jsonl / readings.jsonl 拖放到此处，或点击选择文件</strong>
+              <span id="localAuditStatus">支持同时选择多个文件；解析后将自动在「双网格显微镜」与「Top-20 升降机」中切换为你的本地样本。</span>
+            </div>
+            <div class="dropzone__actions">
+              <label for="jsonlFileInput" class="btn btn--primary btn--sm">选择 JSONL 文件</label>
+              <button id="btnResetDemoData" type="button" class="soft-button" hidden>恢复内置实证病例</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero hero--story" aria-labelledby="hero-title">
+      <div class="hero__center">
+        <p class="eyebrow">White-box retrieval &amp; alignment audit</p>
+        <h1 id="hero-title">把召回、泄漏与失败，<br /><span>摊开在时间轴上。</span></h1>
+        <p class="hero__lede">
+          不掩饰 55.0% 的 Top-1，也不藏起 7 项阴性实验。向下滑动，在浅色长卷轴里逐层拆解两套时间网格的磁吸防泄漏、Top-20 语境逆袭、Prefix KV-Cache 加速与五折交叉验证裁判台。
+        </p>
+
+        <div class="hero__actions">
+          <a href="#sec-grid" class="btn btn--primary">
+            <span>进入双网格显微镜</span>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4v12m0 0-4.5-4.5M10 16l4.5-4.5" /></svg>
+          </a>
+          <a href="#sec-forest" class="btn btn--secondary">直达 7 项阴性实验裁判台</a>
+          <a href="https://github.com/leeoisaboy/audiollm-latent-kws" target="_blank" rel="noopener" class="btn btn--quiet">GitHub 源码 ↗</a>
+        </div>
+
+        <div class="kpi-strip" aria-label="核心实证指标">
+          <div class="kpi-item">
+            <span class="kpi-item__num" id="kpiRecall">94.7%</span>
+            <span class="kpi-item__label">零样本 Top-20 候选召回</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-item__num kpi-item__num--teal" id="kpiLeak">35.2% → 3.4%</span>
+            <span class="kpi-item__label">双网格吸附压降前缀泄漏</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-item__num" id="kpiSpeedup">2.14×</span>
+            <span class="kpi-item__label">H20 Prefix KV-Cache 加速</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-item__num kpi-item__num--coral">7 项</span>
+            <span class="kpi-item__label">五折 CV 诚实淘汰的阴性实验</span>
+          </div>
+        </div>
+
+        <div class="phrase-rail">
+          <div class="phrase-rail__head">
+            <span>选择一个交互式审计病例</span>
+            <span id="caseCountMeta" class="phrase-rail__meta">4 条脱敏轨迹</span>
+          </div>
+          <div id="caseChipsContainer" class="phrase-list"></div>
+        </div>
+
+        <div class="scroll-cue" aria-hidden="true">
+          <span>向下滚动</span>
+          <svg viewBox="0 0 20 28" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M10 3v20M4.5 17.5 10 23l5.5-5.5" /></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 01 / Dual-Grid Timeline Microscope -->
+    <section id="sec-grid" class="showcase" data-reveal aria-labelledby="grid-title">
+      <div class="showcase__head">
+        <div>
+          <p class="eyebrow">01 / Dual-grid microscope</p>
+          <h2 id="grid-title">80 ms 遇上 40 ms，<br />切刀差半步就是泄漏。</h2>
+        </div>
+        <div class="showcase__side">
+          <p class="showcase__lede" id="gridCaseDesc">
+            上轨是冻结 Audio-LLM 的 80 ms 声学帧与 8 帧滑窗余弦响应，下轨是外部 ASR 的 40 ms 字符网格。切换切割模式，亲眼观察切刀如何磁吸回退、熄灭前缀泄漏警报。
+          </p>
+          <div class="mode-switch" role="group" aria-label="前缀切割模式">
+            <button type="button" class="mode-pill is-danger" data-cut-mode="P">Arm P · 硬切 (35.2% 泄漏)</button>
+            <button type="button" class="mode-pill is-active" data-cut-mode="C">Arm C · 网格吸附 (3.4%)</button>
+            <button type="button" class="mode-pill" data-cut-mode="C_phonetic">C + 拼音近似 (+0.80 pp)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="audit-banner" id="leakageBanner">
+        <div class="audit-banner__left">
+          <span class="audit-badge" id="leakageBadge">CLEAN ALIGNMENT · 3.4%</span>
+          <span class="audit-banner__prefix">喂给大模型的左前缀：<code id="prefixPreviewText">外面风大了请帮我把</code></span>
+        </div>
+        <div class="audit-banner__meter" aria-label="语料级前缀泄漏率对比">
+          <span class="audit-banner__meter-label">语料实测泄漏率</span>
+          <div class="mini-bar"><div id="leakMeterFill" class="mini-bar__fill" style="width: 3.4%;"></div></div>
+          <strong id="leakMeterValue" class="mono">3.4%</strong>
+        </div>
+      </div>
+
+      <div class="stage stage--grid">
+        <canvas id="canvasGrid"></canvas>
+      </div>
+
+      <div class="stage-foot">
+        <span id="gridCutNote" class="stage-note">向左磁吸至目标首字起点之前，消除答案泄漏。</span>
+        <div class="legend-row">
+          <span class="legend legend--blue"><span class="legend__swatch"></span>目标词 8 帧响应</span>
+          <span class="legend legend--violet"><span class="legend__swatch"></span>近音干扰词</span>
+          <span class="legend legend--coral"><span class="legend__swatch"></span>硬切泄漏 / 切刀</span>
+          <span class="legend legend--teal"><span class="legend__swatch"></span>40 ms 字符磁吸对齐</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 / Two-Stage Top-20 Candidate Slopegraph -->
+    <section id="sec-slope" class="showcase" data-reveal aria-labelledby="slope-title">
+      <div class="showcase__head">
+        <div>
+          <p class="eyebrow">02 / Two-stage ranking elevator</p>
+          <h2 id="slope-title">94.7% 先撒网进池，<br />语境再把方言词送上去。</h2>
+        </div>
+        <div class="showcase__side">
+          <p class="showcase__lede">
+            左侧是 Stage-1 浅层声学隐空间捞出的 Top-20 候选，右侧是融合大模型语境后的最终名次。拖动 λ 权重滑块，看候选词像升降机一样实时交叉跃迁；切到「诚实失败」病例，看清 5.3% 池外上限为何救不回来。
+          </p>
+          <p id="slopeMetricsReadout" class="showcase__metric">全语料实测：Top-20 召回 94.7% · Top-1 54.2% (λ=4.0)</p>
+        </div>
+      </div>
+
+      <div class="control-strip">
+        <div class="control-strip__slider">
+          <div class="control__label">
+            <span>语言模型融合权重 <code>λ</code>（声学分 + λ × LM 分）</span>
+            <span id="lambdaReadout" class="control__value">λ = 4.00 · 推荐默认</span>
+          </div>
+          <input id="sliderLambda" type="range" min="0" max="6" step="0.1" value="4.0" />
+          <div class="control__hint">
+            <span>0.0 纯声学 (47.4%)</span>
+            <span>1.5 旧默认 (53.1%)</span>
+            <span>4.0 推荐 (54.2% / 55.0%)</span>
+            <span>6.0 强语境</span>
+          </div>
+        </div>
+
+        <div class="control-strip__toggles">
+          <button id="btnToggleCenter" type="button" class="soft-button is-on">去均值 (center)：开</button>
+          <button id="btnToggleWindow" type="button" class="soft-button is-on">声学滑窗：8 帧 (640 ms)</button>
+          <button id="btnJumpFailure" type="button" class="soft-button soft-button--warn">查看 5.3% 诚实失败例</button>
+        </div>
+      </div>
+
+      <div id="failureBanner" class="failure-banner" hidden>
+        <strong>池外漏召回（Out-of-Pool Failure · 5.3%）：</strong>
+        <span id="failureBannerText">目标词在 Stage-1 声学粗定位中排第 24 位，未能进入 Top-20 候选池。无论如何拖动 λ 滑块，后级重排都无法无中生有——这直观印证了 Stage-1 召回上限（94.7%）决定系统天花板。</span>
+      </div>
+
+      <div class="stage stage--slope">
+        <canvas id="canvasSlope"></canvas>
+      </div>
+
+      <div class="stage-foot">
+        <span class="stage-note">Slopegraph · 实时平滑排序插值 · Stage-1 (llm2) → Stage-2 (Step-Audio-2-mini)</span>
+        <div class="legend-row">
+          <span class="legend legend--blue"><span class="legend__swatch"></span>正确目标词</span>
+          <span class="legend legend--teal"><span class="legend__swatch"></span>语境拉升</span>
+          <span class="legend legend--coral"><span class="legend__swatch"></span>语境压降</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 / Prefix KV-Cache Reuse Race -->
+    <section id="sec-kv" class="showcase" data-reveal aria-labelledby="kv-title">
+      <div class="showcase__head">
+        <div>
+          <p class="eyebrow">03 / Prefix KV-cache reuse</p>
+          <h2 id="kv-title">同一段音频前缀，<br />不必重算二十遍。</h2>
+        </div>
+        <div class="showcase__side">
+          <p class="showcase__lede">
+            给 20 个候选打分时，系统提示词与音频前缀完全相同。只算一次前缀并缓存 KV，再瞬间分叉出 20 个极短文本后缀——H20 fp16 实测最高 2.14× 加速，且 200 条对照语音上排序相关性 r ≥ 0.997。
+          </p>
+          <div class="kv-controls">
+            <div class="mode-switch" role="group" aria-label="音频时长选择">
+              <button type="button" class="mode-pill" data-kv-id="short_1.0s">1.0s</button>
+              <button type="button" class="mode-pill" data-kv-id="median_3.6s">3.6s</button>
+              <button type="button" class="mode-pill is-active" data-kv-id="long_6.4s">6.4s</button>
+            </div>
+            <button id="btnRunKvRace" type="button" class="btn btn--primary btn--sm">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6.4 3.6a1 1 0 0 1 1.52-.86l8.1 5.14a1 1 0 0 1 0 1.7l-8.1 5.15a1 1 0 0 1-1.52-.85V3.6Z" /></svg>
+              <span>开始给 20 个候选打分</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kv-stats">
+        <div class="kv-stat">
+          <span class="kv-stat__label">Full Sequence 全序列</span>
+          <strong id="kvFullTime" class="mono">0.301 s</strong>
+        </div>
+        <div class="kv-stat">
+          <span class="kv-stat__label">Prefix-KV Reuse 复用</span>
+          <strong id="kvCachedTime" class="mono kv-stat__teal">0.141 s</strong>
+        </div>
+        <div class="kv-stat">
+          <span class="kv-stat__label">实测加速比</span>
+          <strong id="kvSpeedupBadge" class="mono kv-stat__blue">2.14×</strong>
+        </div>
+        <div class="kv-stat">
+          <span class="kv-stat__label">额外峰值显存</span>
+          <strong id="kvMemBadge" class="mono">192 → 163 MB</strong>
+        </div>
+        <div class="kv-stat">
+          <span class="kv-stat__label">数值一致性 (200 句)</span>
+          <strong id="kvParityBadge" class="mono kv-stat__teal">r ≥ 0.997 · 199/200</strong>
+        </div>
+      </div>
+
+      <div class="stage stage--kv">
+        <canvas id="canvasKvRace"></canvas>
+      </div>
+
+      <div class="stage-foot">
+        <span class="stage-note">数据来源：reports/cache_benchmark.json &amp; reports/stage2_cache_parity.json (NVIDIA H20 · fp16)</span>
+        <div class="legend-row">
+          <span class="legend legend--muted"><span class="legend__swatch"></span>System + 音频前缀</span>
+          <span class="legend legend--blue"><span class="legend__swatch"></span>共享 KV 主干</span>
+          <span class="legend legend--teal"><span class="legend__swatch"></span>2-token 增量候选</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 / Interactive Ablation Forest Plot -->
+    <section id="sec-forest" class="showcase" data-reveal aria-labelledby="forest-title">
+      <div class="showcase__head">
+        <div>
+          <p class="eyebrow">04 / Empirical ablation tribunal</p>
+          <h2 id="forest-title">直觉很动人，<br />但五折验证说了算。</h2>
+        </div>
+        <div class="showcase__side">
+          <p class="showcase__lede">
+            所有改动都在按说话人分组的五折交叉验证上接受 95% 置信区间检验。点选或悬停任意实验条，查看我们为何保留前三项、又为何诚实砍掉时序形状与文本先验。
+          </p>
+          <p class="showcase__metric">虚线为 0.0 pp 零收益线 · 区间跨零或负值一律不进默认路径</p>
+        </div>
+      </div>
+
+      <div class="forest-layout">
+        <div class="stage stage--forest">
+          <canvas id="canvasForest"></canvas>
+        </div>
+
+        <aside id="forestInspector" class="inspector-card" aria-live="polite">
+          <div class="inspector-card__head">
+            <span id="inspStage" class="inspector-card__stage">阴性实验 · 默认关闭</span>
+            <span id="inspDecision" class="inspector-card__badge is-rejected">默认关闭</span>
+          </div>
+          <h3 id="inspTitle">时序形状加权（一阶差分）</h3>
+          <div class="inspector-card__numbers">
+            <div>
+              <span class="inspector-card__num-label">平均增益</span>
+              <strong id="inspDelta" class="mono">+0.03 pp</strong>
+            </div>
+            <div>
+              <span class="inspector-card__num-label">95% 置信区间</span>
+              <strong id="inspCi" class="mono">[-0.31, +0.40]</strong>
+            </div>
+          </div>
+          <p id="inspSummary" class="inspector-card__summary"></p>
+          <div class="inspector-card__why">
+            <strong>为什么这样决定？</strong>
+            <p id="inspWhy"></p>
+          </div>
+          <a id="inspSisterCard" class="sister-link" href="https://leeoisaboy.github.io/disentangle-acoustic-print/" target="_blank" rel="noopener" hidden>
+            <span class="sister-link__eyebrow">双项目互文 · SISTER PROJECT</span>
+            <strong id="inspSisterTitle">disentangle-acoustic-print</strong>
+            <span id="inspSisterNote"></span>
+          </a>
+          <div class="inspector-card__source">
+            证据文件：<code id="inspSource">reports/shape_gate_cv_fused_l4_speaker.json</code>
+          </div>
+        </aside>
+      </div>
+
+      <div class="stage-foot">
+        <span class="stage-note">95% Bootstrap CI · 5-Fold Speaker-Grouped Nested CV (3,244 occurrences / 293 keywords)</span>
+        <div class="legend-row">
+          <span class="legend legend--teal"><span class="legend__swatch"></span>通过并启用</span>
+          <span class="legend legend--coral"><span class="legend__swatch"></span>跨零或负收益（淘汰）</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Latent-KWS Audit Studio · 纯前端 Canvas 审计，本地数据绝不上传</span>
+      <span><a href="https://github.com/leeoisaboy/audiollm-latent-kws" target="_blank" rel="noopener">audiollm-latent-kws</a> · <a href="https://leeoisaboy.github.io/disentangle-acoustic-print/" target="_blank" rel="noopener">disentangle-acoustic-print</a></span>
+    </footer>
+  </main>
+
+  <div id="studioToast" class="toast" role="status" aria-live="polite">
+    <span class="toast__dot" aria-hidden="true"></span>
+    <span id="studioToastText">审计台就绪</span>
+  </div>
+
+  <script src="static/studio.js?v=audit-20261120" defer></script>
+</body>
+</html>

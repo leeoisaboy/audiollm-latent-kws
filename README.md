@@ -5,12 +5,17 @@
 </p>
 
 <p align="center">
+  <a href="https://leeoisaboy.github.io/audiollm-latent-kws/"><img alt="Audit Studio" src="https://img.shields.io/badge/在线体验-Latent--KWS%20Audit%20Studio-0071e3?style=flat-square"></a>
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-README-2f81f7?style=flat-square"></a>
+  <a href="https://leeoisaboy.github.io/disentangle-acoustic-print/"><img alt="Sister Project" src="https://img.shields.io/badge/姐妹项目-Acoustic%20Print%20Studio-2b9c94?style=flat-square"></a>
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-555555?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-b8860b?style=flat-square">
 </p>
 
 # AudioLLM-Latent-KWS
+
+> **[进入在线白盒审计台 · Latent-KWS Audit Studio →](https://leeoisaboy.github.io/audiollm-latent-kws/)**
+> 纯静态零后端交互页面：可实时切换 Arm P 硬切 vs Arm C 网格吸附（观察 35.2% → 3.4% 泄漏压降）、拖动 `λ` 滑块观察 Top-20 候选升降、回放 H20 Prefix KV-Cache 2.14× 加速动画、浏览五折 CV 95% 置信区间裁判台，并支持拖入本地 `pool.jsonl / lm.jsonl / readings.jsonl` 零上传审计。
 
 **只录几段方言指令，就能把新词加入关键词检索，不需要重新训练大模型。**
 

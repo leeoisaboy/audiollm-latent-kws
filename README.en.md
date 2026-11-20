@@ -5,12 +5,17 @@
 </p>
 
 <p align="center">
+  <a href="https://leeoisaboy.github.io/audiollm-latent-kws/"><img alt="Audit Studio" src="https://img.shields.io/badge/Live%20Demo-Latent--KWS%20Audit%20Studio-0071e3?style=flat-square"></a>
   <a href="README.md"><img alt="Chinese" src="https://img.shields.io/badge/中文-README-2f81f7?style=flat-square"></a>
+  <a href="https://leeoisaboy.github.io/disentangle-acoustic-print/"><img alt="Sister Project" src="https://img.shields.io/badge/Sister%20Project-Acoustic%20Print%20Studio-2b9c94?style=flat-square"></a>
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-555555?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-b8860b?style=flat-square">
 </p>
 
 # AudioLLM-Latent-KWS
+
+> **[Open the interactive Latent-KWS Audit Studio →](https://leeoisaboy.github.io/audiollm-latent-kws/)**
+> Static zero-backend audit workspace: inspect the 80 ms / 40 ms dual-grid prefix leakage microscope (`35.2% → 3.4%`), drag the `λ` slider on the Top-20 candidate slopegraph, replay the H20 Prefix KV-Cache `2.14×` race, explore the 95% CI ablation forest plot (including all 7 negative experiments), or drag-and-drop your local `pool.jsonl / lm.jsonl / readings.jsonl` directly in-browser with zero upload.
 
 **Add a new dialect command with a few enrollment clips, without retraining the audio model.**
 
