@@ -5,105 +5,109 @@
 </p>
 
 <p align="center">
-  <a href="https://leeoisaboy.github.io/audiollm-latent-kws/"><img alt="Audit Studio" src="https://img.shields.io/badge/Live%20Demo-Latent--KWS%20Audit%20Studio-0071e3?style=flat-square"></a>
-  <a href="README.md"><img alt="Chinese" src="https://img.shields.io/badge/中文-README-2f81f7?style=flat-square"></a>
-  <a href="https://leeoisaboy.github.io/disentangle-acoustic-print/"><img alt="Sister Project" src="https://img.shields.io/badge/Sister%20Project-Acoustic%20Print%20Studio-2b9c94?style=flat-square"></a>
+  <a href="README.md"><img alt="中文" src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-README-d73a49?style=flat-square"></a>
+  <a href="https://leeoisaboy.github.io/audiollm-latent-kws/"><img alt="Live Studio" src="https://img.shields.io/badge/Live_Studio-Latent--KWS_Audit_Studio-0071e3?style=flat-square"></a>
+  <a href="https://leeoisaboy.github.io/disentangle-acoustic-print/"><img alt="Sister Project" src="https://img.shields.io/badge/Sister_Project-Acoustic_Print_Studio-2b9c94?style=flat-square"></a>
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-555555?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-b8860b?style=flat-square">
 </p>
 
-# AudioLLM-Latent-KWS
+<h1 align="center">AudioLLM-Latent-KWS</h1>
 
-> **[Open the interactive Latent-KWS Audit Studio →](https://leeoisaboy.github.io/audiollm-latent-kws/)**
-> Static zero-backend audit workspace: inspect the 80 ms / 40 ms dual-grid prefix leakage microscope (`35.2% → 3.4%`), drag the `λ` slider on the Top-20 candidate slopegraph, replay the H20 Prefix KV-Cache `2.14×` race, explore the 95% CI ablation forest plot (including all 7 negative experiments), or drag-and-drop your local `pool.jsonl / lm.jsonl / readings.jsonl` directly in-browser with zero upload.
+<p align="center"><strong>Add a new dialect command with just a few recordings—no retraining, with recall, prefix leakage, and 7 negative experiments laid bare.</strong></p>
 
-**Add a new dialect command with a few enrollment clips, without retraining the audio model.**
-
-This repository studies a practical question: do the frozen representations of an audio-language model already contain enough acoustic information to find a newly enrolled word? The system uses a two-stage, training-free pipeline. Stage 1 builds a shortlist with mean acoustic templates. Stage 2 puts each candidate back into the frozen model with its left text context and rescores it.
-
-The project is a research baseline. It reports two findings that are easy to miss: a **mismatch between two time grids**, and a **temporal-shape experiment that did not improve the final score**.
-
-## Main results
-
-The real-corpus experiment contains 2031 Wu utterances, 3244 target-word occurrences, and 293 words.
-
-| Question | Result | Plain reading |
-|---|---:|---|
-| Is the correct word in the top 20 candidates? | **94.7%** | 3071 of 3244 occurrences reach the shortlist |
-| Is it first with acoustic ranking only? | **47.4%** | 1538 of 3244 occurrences |
-| After default context reranking? | **54.2%** | 1757 of 3244 occurrences |
-| With optional homophone-tolerant snapping at the recommended weight? | **55.0%** | 1783 of 3244 occurrences |
-
-The recommended configuration is as follows.
-
-```text
-layer 2 of the frozen audio model
-  + 8-frame (about 640 ms) mean template
-  + enrollment mean centering
-  + top-20 shortlist
-  + character-grid snap on the 40 ms reading timeline
-  + acoustic score + 4.0 x language-model score
-  + optional Mandarin-pinyin fuzzy first-character snap
-  + temporal shape disabled
-```
-
-The `4.0` multiplies the language-model term; the acoustic term remains at 1. The measured curve is flat from 4.0 to 5.5. Weight 5.5 has the highest occurrence-only score (55.1%), while 4.0 gives 55.0% and a higher word-level score (64.5% versus 64.1%). The difference is 0.1 point, inside sampling noise, so the repository keeps the more conservative and balanced 4.0.
-
-## Two time grids can misalign
-
-Audio features use 80 ms frames. The external text reader uses a 40 ms character grid. A naive nearest-frame cut often leaves the target word's first character in the left context, effectively leaking part of the answer.
+## The Live Audit Studio
 
 <p align="center">
-  <img src="docs/assets/grid_alignment_spotlight.png" alt="A dog illustration comparing a naive nearest-frame cut with a cut snapped to the character grid" width="900">
+  <a href="https://leeoisaboy.github.io/audiollm-latent-kws/">
+    <img src="docs/assets/audit-studio-demo.gif" alt="Latent-KWS Audit Studio live four-module interactive showcase" width="960" />
+  </a>
 </p>
 
-Figure 1. A direct nearest-frame cut can leave the target's first character in the prefix; snapping to the character grid moves the boundary before the word.
+<p align="center"><strong><a href="https://leeoisaboy.github.io/audiollm-latent-kws/">▶ Open Latent-KWS Audit Studio</a></strong></p>
 
-On 3244 real occurrences:
+The animation above mirrors the live, zero-backend Audit Studio. Built as an open, borderless scroll story, all four modules animate continuously on their own as you scroll: watch an 80 ms / 40 ms grid mismatch leak the target's first character and snap cleanly back, see `λ` lift a dialect command from #4 to #1 in the Top-20 pool, compare 20× full-sequence recomputation against `2.14×` Prefix KV-Cache reuse, and inspect the 95% confidence intervals behind every kept and discarded experiment. You can also drag-and-drop your own local `pool.jsonl`, `lm.jsonl`, and `readings.jsonl` directly into the browser—everything runs in memory with zero upload.
 
-| Left-context cut | Target first character appears in prefix |
-|---|---:|
-| Naive nearest-frame hard cut | **35.2%** |
-| Snap to the character grid first | **3.4%** |
+| Module | What you see live | Code & Evidence |
+| --- | --- | --- |
+| 01 Dual-Grid Alignment | 80 ms acoustic response vs 40 ms character rail; Arm P leak (`35.2%`) → Arm C magnetic snap (`3.4%`) | `reranker/align.py`, `reports/prefix_audit_real.json` |
+| 02 Two-Stage Reranking | Animated Top-20 Slopegraph with live `λ` sweep and an honest `5.3%` out-of-pool failure case | `locator/search.py`, `reports/stage2_lambda_sweep.json` |
+| 03 Prefix KV-Cache | 20× Full Sequence (`0.301 s`) vs Shared Prefix-KV Reuse (`0.141 s`, `2.14×` speedup) | `integration/step_audio2.py`, `reports/cache_benchmark.json` |
+| 04 Empirical Tribunal | 95% CI Forest Plot: 3 accepted changes vs 4 rejected experiments (with sister-project link) | `reports/stage1_cv_speaker.json`, `shape_gate_cv_fused_l4_speaker.json` |
 
-Only the context boundary changes. The model, shortlist, and fusion weights stay fixed. See [reports/prefix_audit_real.json](reports/prefix_audit_real.json).
+## Why This Project Exists
 
-## How the settings were checked
+Voice assistants handle standard Mandarin well, yet stumble on everyday dialect phrases. Collecting labeled timestamps and fine-tuning a large audio model for every new long-tail command is simply too expensive.
 
-Configuration selection used nested five-fold cross-validation. The Stage-1 comparison selected `k=8 + mean centering` in all five speaker-grouped folds and four of five utterance-grouped folds.
+This repository asks a plain question: **can a frozen audio-language model—without updating a single weight—already spot a newly enrolled dialect word from just a few short clips?**
 
-| Comparison | Change in occurrence top-1 | 95% interval | Grouping |
-|---|---:|---:|---|
-| 8-frame + centering vs. old 5-frame | **+3.70 points** | [+2.80, +4.61] | speaker |
-| Same comparison | **+3.51 points** | [+2.62, +4.42] | utterance |
-| Rerank weight 4.0 vs. inherited 1.5 | **+1.05 points** | [+0.47, +1.64] | paired bootstrap |
-| Pinyin snap at 4.0 vs. exact snap at 4.0 | **+0.80 points** | [+0.37, +1.26] | paired bootstrap |
+Rather than hiding a `55.0%` Top-1 behind marketing polish, we treat this as a **reproducible, white-box research baseline** that spotlights two pitfalls rarely discussed in papers:
+1. **Misaligned time grids silently leak the answer into the left context (`35.2%` of occurrences)**;
+2. **Seven intuitive add-ons failed strict 5-fold speaker-grouped cross-validation and were honestly left off by default.**
 
-The speaker grouping comes from the corpus's `rec_sXX` naming rule, not an official speaker release. It should be rechecked with official metadata or a second corpus.
+## How the Two-Stage Pipeline Works
 
-## Variants outside the default path
+1. **Stage 1 — Cast a Wide Acoustic Net (`94.7%` Top-20 Recall)**
+   Average layer-2 frozen representations of the enrollment clips, subtract the enrollment global mean (`center`), and slide an 8-frame (`640 ms`) window across the query audio to shortlist the **Top 20** candidates.
+2. **Stage 2 — Let Context Decide (`47.4% → 55.0%` Top-1)**
+   Feed the 20 shortlisted words back into the frozen Audio-LLM conditioned on the left text context, fusing `acoustic + 4.0 × LM` to pick the final winner.
 
-These branches were tested on the real corpus and kept for reproducibility. They are not enabled by default.
+### Why Dual-Grid Snapping Matters
 
-| Variant | Observation | Decision |
-|---|---|---|
-| Duration-adaptive windows and peak growing | top-1 46.5%, pool recall 93.4% | not default |
-| Multi-prototype / k-means templates | about 45.0%, pool recall 91.7% | research only |
-| Principal-component removal / PCA whitening | 39.5% / 43.2%, clear recall loss | experiment only |
-| Layer-score fusion | lower pool recall than layer 2 | not default |
-| Two starts per candidate | +0.68 points at weight 4.0 | below pinyin snap |
-| Text-prior calibration | -0.96 at weight 1.5; -3.45 at weight 4.0 for gamma 1 | kept as a result record |
-| Temporal-shape gate | +0.17 / +0.03 points, both intervals cross zero | disabled |
+The audio model steps every **80 ms**, while the external character reader steps every **40 ms**. Cutting naively on the nearest acoustic frame often lands *after* the target word's first character—handing the answer to the reranker in the prompt.
 
-The shape result is especially important. A first-difference signal can rank candidates in isolation, but adding it with a fixed linear weight to the acoustic and language-model scores does not produce a stable gain. A signal can work on its own and still fail to improve the full pipeline.
+<p align="center">
+  <img src="docs/assets/grid_alignment_spotlight.png" alt="Naive frame cut leaks the first character into the prefix; snapping to the 40ms character grid stops cleanly before it" width="880" />
+</p>
 
-## Cache speedup
+| Prefix Cut Strategy | Target First-Char Leakage (`n = 3,244`) | Plain Meaning |
+| --- | ---: | --- |
+| Naive nearest-frame cut (Arm P) | **35.2%** | Over one third of occurrences peek at the answer |
+| Snap to 40 ms character grid (Arm C) | **3.4%** | Leakage drops by ~10× |
+| Optional Pinyin-fuzzy snap (`C + Pinyin`) | **Recovers homophone ASR typos** | Handles near-homophone reader errors (`+0.80 pp`) |
 
-The audio prefix is identical for all candidates in one utterance. Reusing its KV cache is useful, and the measured speedup is **1.30x to 2.14x** for the tested audio lengths. The cache changes scores by at most about 0.04 log-probability units, and the top-1 result is identical on 199 of 200 utterances. See [reports/cache_benchmark.json](reports/cache_benchmark.json).
+## Real-Corpus Results
 
-## Running the project
+Measured on **2,031 Wu dialect utterances, 3,244 target occurrences, and 293 keywords** (full details in [reports/README.md](reports/README.md)):
 
-Synthetic fixtures only verify the interfaces. They are not accuracy evidence.
+| Question | Result | Plain Reading |
+| --- | ---: | --- |
+| Does the right word enter the Top-20 pool? | **94.7%** | 3,071 / 3,244 reach the shortlist; the remaining 5.3% cannot be rescued downstream |
+| Acoustic-only Top-1? | **47.4%** | 1,538 / 3,244 ranked #1 before context |
+| Default context reranking (`λ = 4.0`)? | **54.2%** | 1,757 / 3,244 ranked #1 with zero extra deps |
+| With optional Pinyin-fuzzy snapping? | **55.0%** | 1,783 / 3,244 ranked #1 (`64.5%` word-balanced) |
+
+### Prefix KV-Cache Speedup (NVIDIA H20 · fp16 · 20 candidates)
+
+| Audio Length | Full Sequence (20×) | Prefix-KV Reuse | Speedup | Peak Extra VRAM |
+| --- | ---: | ---: | ---: | ---: |
+| 1.0 s | 0.283 s | 0.160 s | **1.77×** | 174 → 154 MB |
+| 3.6 s | 0.239 s | 0.183 s | **1.30×** | 127 → 123 MB |
+| 6.4 s | 0.301 s | 0.141 s | **2.14×** | 192 → 163 MB |
+
+Across 200 paired utterances, cached scoring achieves **Spearman r ≥ 0.997** with **199/200** identical Top-1 predictions.
+
+## Seven Negative Experiments Left Off by Default
+
+| Idea Tested | Real-Corpus Observation | Why Excluded |
+| --- | --- | --- |
+| **Temporal-shape weighting (Δ)** | `+0.03 pp` (`[-0.31, +0.40]`) | Crosses zero after strong LM reranking (standalone temporal disentanglement is explored in sister repo [disentangle-acoustic-print](https://github.com/leeoisaboy/disentangle-acoustic-print)) |
+| **Multi-prototype K-means** | `45.0%` Top-1 / `91.7%` recall | Overfits few-shot enrollment clips vs single mean template |
+| **PCA removal / whitening** | `39.5%` / `43.2%` Top-1 | Destroys high-variance phonetic directions in `llm2` |
+| **Text-prior calibration (PMI)** | **`-3.45 pp`** at `λ = 4.0` | Penalizes legitimate high-probability commands |
+| **Adaptive window growth** | `46.5%` Top-1 / `93.4%` recall | Less stable than fixed 8-frame (`640 ms`) window |
+| **Multi-layer fusion** | Recall drops `94.7% → 93.4%` | Hurts the critical Top-20 shortlist ceiling |
+| **Two starts per candidate** | `+0.68 pp` | Weaker than simpler Pinyin-fuzzy snapping |
+
+## Quick Start
+
+Preview the static Audit Studio locally (zero backend required):
+
+```bash
+python -m http.server 8766 --directory studio
+```
+
+Run the synthetic end-to-end CLI pipeline:
 
 ```bash
 git clone https://github.com/leeoisaboy/audiollm-latent-kws.git
@@ -111,216 +115,10 @@ cd audiollm-latent-kws
 python -m venv .venv
 python -m pip install -e ".[dev]"
 python scripts/make_fixtures.py --output data/synthetic
+python cli.py locate --templates data/synthetic/templates.jsonl --enroll-dir data/synthetic/enroll --search-manifest data/synthetic/search_manifest.jsonl --search-dir data/synthetic/search --latent-width 16 --window 8 --calibration center --pool-top 20 --include-gold --output reports/synthetic/pool.jsonl
+python cli.py rerank --pool reports/synthetic/pool.jsonl --reading data/synthetic/readings.jsonl --wav-dir data/synthetic --scorer examples.dummy_scorer:create_scorer --output reports/synthetic/lm.jsonl
+python cli.py fuse --pool reports/synthetic/pool.jsonl --lm reports/synthetic/lm.jsonl --lambda-lm 4.0 --output reports/synthetic/metrics.json
+python cli.py audit --pool reports/synthetic/pool.jsonl --lm reports/synthetic/lm.jsonl --reading data/synthetic/readings.jsonl --output reports/synthetic/prefix_audit.json
 ```
 
-```bash
-python cli.py locate \
-  --templates data/synthetic/templates.jsonl \
-  --enroll-dir data/synthetic/enroll \
-  --search-manifest data/synthetic/search_manifest.jsonl \
-  --search-dir data/synthetic/search \
-  --latent-width 16 \
-  --window 8 \
-  --calibration center \
-  --pool-top 20 \
-  --include-gold \
-  --output reports/synthetic/pool.jsonl
-
-python cli.py evaluate --pool reports/synthetic/pool.jsonl --output reports/synthetic/stage1.json
-
-python cli.py rerank \
-  --pool reports/synthetic/pool.jsonl \
-  --reading data/synthetic/readings.jsonl \
-  --wav-dir data/synthetic \
-  --scorer examples.dummy_scorer:create_scorer \
-  --output reports/synthetic/lm.jsonl
-
-python cli.py fuse \
-  --pool reports/synthetic/pool.jsonl \
-  --lm reports/synthetic/lm.jsonl \
-  --lambda-lm 4.0 \
-  --output reports/synthetic/metrics.json
-
-python cli.py audit \
-  --pool reports/synthetic/pool.jsonl \
-  --lm reports/synthetic/lm.jsonl \
-  --reading data/synthetic/readings.jsonl \
-  --output reports/synthetic/prefix_audit.json
-```
-
-Install `.[phonetic]` and add `--phonetic-snap` to enable the optional pinyin branch.
-
-Real feature extraction needs private audio and a local frozen checkpoint:
-
-```bash
-python integration/step_audio2.py \
-  --model /path/to/Step-Audio-2-mini \
-  --manifest /private/path/all_clips.jsonl \
-  --enroll-manifest /private/path/enroll.jsonl \
-  --search-manifest /private/path/search.jsonl \
-  --output-root features \
-  --layers 0,1,2,3,4,8 \
-  --device cuda:0 \
-  --quantization 4bit \
-  --dtype float16
-```
-
-Weights, restricted audio, speaker identities, and recognizer output are not distributed.
-
-## Code structure
-
-The `v3` layout separates the final runtime path from the experiment record. The first part is enough for normal use; the second part supports result checks and reruns. Each `__init__.py` only exports the public interface of its package and is not listed separately below.
-
-### Directory tree
-
-```text
-audiollm-latent-kws-v3/
-├── cli.py                         command-line entry for five subcommands
-├── pyproject.toml                 dependencies, packaging, command declaration
-├── README.md / README.en.md       Chinese and English project pages
-├── LICENSE                        Apache-2.0 license
-├── SECURITY.md                    privacy and security notes
-├── CONTRIBUTING.md                contribution notes
-├── .github/workflows/ci.yml       tests on Python 3.11 and 3.12
-├── common/                        shared runtime code
-│   ├── config.py                  fixed parameters and time grids
-│   ├── io.py                      JSON and JSONL input/output
-│   └── scoring.py                 normalization, fusion, and ranks
-├── locator/                       Stage 1, acoustic template search
-│   ├── templates.py               build one mean template per word
-│   ├── calibration.py             remove the enrollment-wide offset
-│   └── search.py                  8-frame window, cosine score, top-20
-├── reranker/                      Stage 2, left-context rescoring
-│   ├── align.py                   40 ms character-grid snap, optional pinyin
-│   └── scoring.py                 candidate scoring and rerank flow
-├── analysis/                      evaluation and error checks
-│   ├── evaluation.py              pool recall, top-1, word-level metrics
-│   └── audit.py                   first-character leakage audit
-├── integration/                   frozen-model integration
-│   ├── step_audio2.py             feature export, scoring, cache reuse
-│   └── low_memory_safetensors.py  low-memory weight loading
-├── examples/
-│   └── dummy_scorer.py            fixed fake scores for CLI smoke tests
-├── experiments/                   variants outside the default path
-│   ├── layer_probe.py             layer and layer-fusion comparison
-│   ├── shape.py                   differencing, resampling, DTW, entropy gate
-│   ├── text_prior.py              text-only calibration scorer
-│   └── legacy/                    old search, alignment, templates, calibration
-│       ├── search.py              window growth, multiscale search, NMS
-│       ├── align.py               old left-context variants
-│       ├── templates.py           k-means sub-templates and old template store
-│       ├── calibration.py         component removal and PCA whitening
-│       └── layers.py              multi-layer configuration and loading
-├── scripts/                       real-corpus experiments and reproduction
-│   ├── make_fixtures.py           generate synthetic fixtures
-│   ├── stage1_cv.py               grouped Stage-1 cross-validation
-│   ├── stage1_real_ablation.py    window, centering, whitening, template comparison
-│   ├── stage1_grow_real.py        peak-neighborhood window growth
-│   ├── stage1_layer_fusion_real.py    layer-score fusion
-│   ├── stage2_real_ablation.py    pinyin, two starts, text prior, leakage
-│   ├── lambda_sweep.py            language-model weight sweep and intervals
-│   ├── lambda_cv.py               weight selection and held-out validation
-│   ├── shape_gate_real.py         temporal-shape weighting on real data
-│   ├── shape_gate_cv.py           temporal-shape cross-validation
-│   ├── shape_dtw_real.py          DTW and subsequence DTW
-│   └── benchmark_kv_cache.py      latency, memory, and ranking parity
-├── tests/                         default-path unit tests
-│   ├── test_locator.py            templates, centering, windows, pool search
-│   ├── test_alignment.py          grid snap, pinyin matching, prefixes
-│   ├── test_scoring.py            normalization, ranks, fusion, leakage
-│   ├── test_step_audio2_guard.py  half-precision linear guard
-│   └── research/                  experiment-branch tests
-│       ├── test_layer_probe.py    layer comparison and fusion
-│       ├── test_shape.py          shape operators and DTW
-│       └── test_shape_gate.py     shape gating and baseline scores
-├── data/                          schema examples and synthetic inputs
-├── docs/                          architecture, models, reproduction, results
-└── reports/                       JSON evidence and report index
-```
-
-### Final runtime path
-
-| File | Purpose |
-|---|---|
-| `cli.py` | Provides `locate`, `evaluate`, `rerank`, `fuse`, and `audit`; loads arguments, calls each stage, and writes results. |
-| `common/config.py` | Holds acoustic and text frame lengths, the feature layer, window length, pool size, and language-model weight. |
-| `common/io.py` | Reads and writes JSON and JSONL. |
-| `common/scoring.py` | Normalizes pool scores, fuses acoustic and language-model terms, and computes ranks. |
-| `locator/templates.py` | Builds word templates by averaging frames inside each take, then averaging takes for the same word; also records duration and take count. |
-| `locator/calibration.py` | Estimates and removes a global enrollment mean. The final path uses mean centering only. |
-| `locator/search.py` | Runs an 8-frame mean window over an utterance, scores cosine similarity against templates, keeps the best start per word, and returns the top 20 words. |
-| `reranker/align.py` | Reads the 40 ms character grid, snaps a candidate start to a character boundary, and optionally matches a nearby pronunciation through Mandarin pinyin. |
-| `reranker/scoring.py` | Defines the scorer interface, walks the candidate pool, calls the model, and collects rerank results. |
-| `analysis/evaluation.py` | Computes top-20 pool recall, occurrence top-1, and word-level metrics. |
-| `analysis/audit.py` | Compares nearest-frame cuts with character-grid cuts and counts first-character leakage in the prefix. |
-| `integration/step_audio2.py` | Loads the frozen Step-Audio-2, exports layer features, implements the rerank scorer, and reuses the audio-prefix cache. |
-| `integration/low_memory_safetensors.py` | Loads safetensors weights lazily or with lower memory use. |
-
-### Experiment modules
-
-| File | Purpose |
-|---|---|
-| `experiments/layer_probe.py` | Compares layers and layer-fusion variants by separation, top-1, and pool recall. |
-| `experiments/shape.py` | Resampling, first differences, shape templates, cosine distance, DTW, subsequence DTW, and entropy gating. |
-| `experiments/text_prior.py` | Text-only calibration scorer kept for the rejected text-prior experiment. |
-| `experiments/legacy/align.py` | Old context-splitting variants, including no-prefix, prefix, and cross-word branches. |
-| `experiments/legacy/calibration.py` | Old component-removal and PCA-whitening calibrations. |
-| `experiments/legacy/layers.py` | Old multi-layer fusion settings and feature loading. |
-| `experiments/legacy/search.py` | Old search with window growth, multiscale scoring, alternate starts, and non-maximum suppression. |
-| `experiments/legacy/templates.py` | Old template construction with k-means sub-templates and a directory feature store. |
-
-### Reproduction scripts
-
-| File | Purpose |
-|---|---|
-| `scripts/make_fixtures.py` | Generates synthetic features, enrollment rows, search rows, and readings to verify the CLI wiring. |
-| `scripts/stage1_cv.py` | Grouped cross-validation for Stage-1 window length and centering. |
-| `scripts/stage1_real_ablation.py` | Stage-1 real-corpus comparisons over windows, centering, whitening, templates, and layers. |
-| `scripts/stage1_grow_real.py` | Window growth around score peaks. |
-| `scripts/stage1_layer_fusion_real.py` | Layer-score fusion. |
-| `scripts/stage2_real_ablation.py` | Stage-2 pinyin matching, two starts, text-prior calibration, and prefix leakage. |
-| `scripts/lambda_sweep.py` | Language-model weight sweep with paired intervals. |
-| `scripts/lambda_cv.py` | Weight selection on training folds and validation on held-out data. |
-| `scripts/shape_gate_real.py` | Temporal-shape weighting on real data. |
-| `scripts/shape_gate_cv.py` | Temporal-shape cross-validation and weight selection. |
-| `scripts/shape_dtw_real.py` | Dynamic time warping and subsequence dynamic time warping. |
-| `scripts/benchmark_kv_cache.py` | Latency, peak memory, and ranking parity for cached and full-sequence scoring. |
-
-### Tests and support files
-
-| File | Purpose |
-|---|---|
-| `examples/dummy_scorer.py` | Deterministic fake scorer for CLI and fusion smoke tests; it is not accuracy evidence. |
-| `tests/test_locator.py` | Checks mean templates, centering, window shapes, and pool localization. |
-| `tests/test_alignment.py` | Checks grid snapping, pinyin matching, and prefix construction. |
-| `tests/test_scoring.py` | Checks normalization, ties, score fusion, and leakage counting. |
-| `tests/test_step_audio2_guard.py` | Checks the half-precision linear guard and skips when `torch` is absent. |
-| `tests/research/test_layer_probe.py` | Checks layer comparison and fusion results. |
-| `tests/research/test_shape.py` | Checks shape operators, DTW, and entropy gating. |
-| `tests/research/test_shape_gate.py` | Checks shape weighting and baseline scores. |
-| `pyproject.toml` | Declares the package, version, dependencies, optional extras, and command entry point. |
-| `data/` | Provides schema examples and synthetic fixtures without private audio. |
-| `docs/` | Architecture, model, reproduction, and full-result documentation. |
-| `reports/` | JSON experiment results; `reports/README.md` maps reports to conclusions. |
-| `.github/workflows/ci.yml` | Installs the package and runs tests on Python 3.11 and 3.12. |
-
-## Tests
-
-```bash
-python -m compileall -q .
-python -m pytest -q
-```
-
-Current local result: 22 tests pass, with one torch-dependent model-loading guard skipped when the runtime is absent.
-
-## Scope and limits
-
-- One private 2031-utterance Wu corpus only.
-- Speaker groups use a filename rule, not official speaker IDs.
-- Pinyin snapping uses a Mandarin approximation and should not be read as a Wu phonology result.
-- Synthetic fixtures prove wiring only.
-- False alarms, far-field noise, power, and real-time end-to-end latency are not evaluated.
-- KV-cache speedup is 1.30-2.14x.
-- Text-prior calibration, principal-component removal, PCA whitening, multi-template models, existing layer fusion, and fixed-weight shape fusion do not enter the default path.
-
-The code is Apache-2.0. Models, audio, and derived features retain their original licenses.
+See [docs/MODELS.md](docs/MODELS.md), [docs/REPRODUCE.md](docs/REPRODUCE.md), and [docs/REAL_CORPUS_RESULTS.md](docs/REAL_CORPUS_RESULTS.md) for full reproduction notes and limitations.
