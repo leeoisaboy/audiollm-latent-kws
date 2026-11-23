@@ -16,6 +16,13 @@
 
 <p align="center"><strong>Add a new dialect command with just a few recordings—no retraining, with recall, prefix leakage, and 7 negative experiments laid bare.</strong></p>
 
+
+## Architecture Pipeline
+
+<p align="center">
+  <img src="docs/assets/pipeline_architecture.jpg" alt="AudioLLM-Latent-KWS Training-Free Reranking & Audit Pipeline" width="1000" />
+</p>
+
 ## The Live Audit Studio
 
 <p align="center">
