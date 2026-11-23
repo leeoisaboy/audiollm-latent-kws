@@ -16,6 +16,13 @@
 
 <p align="center"><strong>只录几段方言词，就能让冻结的音频大模型听懂新指令；把召回、泄漏与 7 项失败实验全部摊开在光下。</strong></p>
 
+
+## 方法流程图 · Architecture Pipeline
+
+<p align="center">
+  <img src="docs/assets/pipeline_architecture.jpg" alt="AudioLLM-Latent-KWS 免训练重排与五折防泄漏审计架构流程图" width="1000" />
+</p>
+
 ## 正在运行的审计台
 
 <p align="center">
