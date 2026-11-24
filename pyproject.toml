@@ -31,13 +31,12 @@ audiollm-latent-kws = "cli:main"
 [tool.setuptools]
 py-modules = ["cli"]
 packages = [
+  "core",
   "common",
   "locator",
   "reranker",
   "analysis",
   "integration",
-  "experiments",
-  "experiments.legacy",
   "examples",
 ]
 
