@@ -18,6 +18,10 @@
 <p align="center"><strong>Subtracting couplings from frozen Audio-LLMs so two short recordings are enough to spot a new keyword across dialects and languages.</strong></p>
 
 <p align="center">
+  <strong>🤗 Public 3-Tier KWS Benchmark Dataset (L1 Wu · L2 KeSpeech · L3 LibriPhrase): <a href="https://huggingface.co/datasets/Leeoisaboy/audiollm-latent-kws-bench">Leeoisaboy/audiollm-latent-kws-bench ↗</a></strong>
+</p>
+
+<p align="center">
   <img src="docs/assets/pipeline_architecture.jpg" alt="Figure 1: Language-agnostic 5-step pipeline and dual-backend public benchmark audit" width="1000" />
   <br />
   <sub>Figure 1: Language-agnostic 5-step pipeline and dual-backend public benchmark architecture</sub>

@@ -18,6 +18,10 @@
 <p align="center"><strong>给音频大模型做减法，让它录两遍新词就能跨语种听懂。</strong></p>
 
 <p align="center">
+  <strong>🤗 公开三级评测数据集（L1 沪语 · L2 多方言 · L3 英文开放集）：<a href="https://huggingface.co/datasets/Leeoisaboy/audiollm-latent-kws-bench">Leeoisaboy/audiollm-latent-kws-bench ↗</a></strong>
+</p>
+
+<p align="center">
   <img src="docs/assets/pipeline_architecture.jpg" alt="图 1：AudioLLM-Latent-KWS 语言无关五步流水线与双后端公开基准架构" width="1000" />
   <br />
   <sub>图 1：AudioLLM-Latent-KWS 语言无关五步流水线与双后端公开基准架构</sub>
