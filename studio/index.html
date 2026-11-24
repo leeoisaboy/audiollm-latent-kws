@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=Noto+Sans+SC:wght@400..700&amp;family=Roboto+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230071e3'/%3E%3Cpath d='M5 7h14M5 12h9M5 17h14M16.5 9.5 20 12l-3.5 2.5' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="static/studio.css?v=apple-20261120" />
+  <link rel="stylesheet" href="static/studio.css?v=universal-20261124" />
 </head>
 <body>
   <header class="topbar">
@@ -28,8 +28,11 @@
       <div class="topbar__meta">
         <span class="live-pill">
           <span class="status-dot is-live" aria-hidden="true"></span>
-          <span id="auditSourceBadge">实证语料 · 3,244 样本</span>
+          <span id="auditSourceBadge">L1/L2/L3 公开基准 · 双冻结后端</span>
         </span>
+        <a class="compact-button compact-button--hide-small" href="https://huggingface.co/datasets/Leeoisaboy/audiollm-latent-kws-bench" target="_blank" rel="noopener">
+          <span>HF 数据集 ↗</span>
+        </a>
         <a class="compact-button compact-button--hide-small" href="https://leeoisaboy.github.io/disentangle-acoustic-print/" target="_blank" rel="noopener">
           <span>Acoustic Print ↗</span>
         </a>
@@ -74,43 +77,43 @@
 
     <section class="hero hero--story" aria-labelledby="hero-title">
       <div class="hero__center">
-        <p class="eyebrow">White-box retrieval audit</p>
-        <h1 id="hero-title">把召回与泄漏，<br /><span>摊开在光下。</span></h1>
+        <p class="eyebrow">Universal training-free KWS · Dual Audio-LLM Audit</p>
+        <h1 id="hero-title">零阅读器，零泄漏，<br /><span>跨语种全摊在光下。</span></h1>
         <p class="hero__lede">
-          不掩饰 55.0% 的 Top-1，也不藏起 7 项阴性实验。向下滚动，双网格磁吸、Top-20 语境跃迁、前缀缓存竞赛与五折裁判台将依次动态展开。
+          砍掉外部 40 ms 阅读器与普通话拼音，收敛为 5 步语言无关纯函数引擎。在 L1 沪语、L2 多方言、L3 英文开放集与 Step-Audio-2 / Qwen2-Audio 双冻结后端上全量实证验收。
         </p>
 
         <div class="hero__actions">
-          <a href="#sec-grid" class="btn btn--primary">
-            <span>开始浏览</span>
+          <a href="#sec-matrix" class="btn btn--primary">
+            <span>查看三级公开矩阵</span>
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4v12m0 0-4.5-4.5M10 16l4.5-4.5" /></svg>
           </a>
-          <a href="#sec-forest" class="btn btn--secondary">查看 7 项阴性实验</a>
+          <a href="https://huggingface.co/datasets/Leeoisaboy/audiollm-latent-kws-bench" target="_blank" rel="noopener" class="btn btn--secondary">Hugging Face 公开数据集 ↗</a>
           <a href="https://github.com/leeoisaboy/audiollm-latent-kws" target="_blank" rel="noopener" class="btn btn--quiet">GitHub 源码 ↗</a>
         </div>
 
         <div class="kpi-strip" aria-label="核心实证指标">
           <div class="kpi-item">
-            <span class="kpi-item__num" id="kpiRecall">94.7%</span>
-            <span class="kpi-item__label">Top-20 候选召回</span>
+            <span class="kpi-item__num" id="kpiRecall">96.2%–100%</span>
+            <span class="kpi-item__label">L1/L2/L3 Top-20 召回</span>
           </div>
           <div class="kpi-item">
-            <span class="kpi-item__num kpi-item__num--teal" id="kpiLeak">35.2% → 3.4%</span>
-            <span class="kpi-item__label">前缀泄漏压降</span>
+            <span class="kpi-item__num kpi-item__num--teal" id="kpiLeak">0.00%</span>
+            <span class="kpi-item__label">无阅读器前缀泄漏</span>
           </div>
           <div class="kpi-item">
-            <span class="kpi-item__num" id="kpiSpeedup">2.14×</span>
-            <span class="kpi-item__label">KV-Cache 加速</span>
+            <span class="kpi-item__num" id="kpiSpeedup">3.07× / 7.93×</span>
+            <span class="kpi-item__label">双后端 KV-Cache 加速</span>
           </div>
           <div class="kpi-item">
-            <span class="kpi-item__num kpi-item__num--coral">7 项</span>
-            <span class="kpi-item__label">公开阴性实验</span>
+            <span class="kpi-item__num kpi-item__num--teal">97.8% · 0.987</span>
+            <span class="kpi-item__label">L3 Top-1 · 开放集 AUC</span>
           </div>
         </div>
 
         <div class="phrase-rail">
           <div class="phrase-rail__head">
-            <span>当前审计病例</span>
+            <span>交互式历史审计病例</span>
             <span id="caseCountMeta" class="phrase-rail__meta">4 条脱敏轨迹</span>
           </div>
           <div id="caseChipsContainer" class="phrase-list"></div>
@@ -120,6 +123,99 @@
           <span>向下滚动</span>
           <svg viewBox="0 0 20 28" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M10 3v20M4.5 17.5 10 23l5.5-5.5" /></svg>
         </div>
+      </div>
+    </section>
+
+    <!-- 00 / 3-Tier Public Benchmark & Dual-Backend Convergence Matrix -->
+    <section id="sec-matrix" class="showcase" aria-labelledby="matrix-title">
+      <div class="showcase__head">
+        <div>
+          <p class="eyebrow">00 / 3-Tier public benchmark · H20 GPU0</p>
+          <h2 id="matrix-title">三级公开集，<br /><span>双后端硬性门禁。</span></h2>
+        </div>
+        <div class="showcase__side">
+          <p class="showcase__lede">
+            所有预切分公开评测集托管于 <a href="https://huggingface.co/datasets/Leeoisaboy/audiollm-latent-kws-bench" target="_blank" rel="noopener">Hugging Face</a>（每级 40 词 / 120 注册 / 180 正例 + 180 负例，严格说话人隔离）。以下为 Step-Audio-2 与 Qwen2-Audio (audio_tower) 在 0.00% 前缀泄漏下的完整 H20 实测对照。
+          </p>
+          <p class="showcase__metric">核心包 AST 审计：0 外部阅读器 · 0 拼音库 · 双后端 R@20 全部 ≥ 87.7%</p>
+        </div>
+      </div>
+
+      <div class="matrix-grid">
+        <article class="matrix-card">
+          <div class="matrix-card__head">
+            <span class="matrix-pill">L1 · 沪语 / 吴语</span>
+            <span class="matrix-sub">MagicHub · 14 说话人</span>
+          </div>
+          <div class="matrix-rows">
+            <div class="matrix-row is-best">
+              <span>Step-Audio-2 (Listwise)</span>
+              <strong class="mono">R@20 96.2% · Top-1 40.4% · AUC 0.847</strong>
+            </div>
+            <div class="matrix-row">
+              <span>Wu-ASR S1 + Wu-Und S2</span>
+              <strong class="mono">R@20 99.3% · Hit@1 72.2% · F1 73.9%</strong>
+            </div>
+            <div class="matrix-row">
+              <span>Qwen2-Audio (audio_tower)</span>
+              <strong class="mono">R@20 87.7% · Top-1 26.7% (+6.16pp)</strong>
+            </div>
+            <div class="matrix-row is-muted">
+              <span>Whisper-tiny ASR + Fuzzy</span>
+              <strong class="mono">Top-1 3.3% · AUC 0.583 · 0.697s</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="matrix-card">
+          <div class="matrix-card__head">
+            <span class="matrix-pill">L2 · 跨汉语方言</span>
+            <span class="matrix-sub">KeSpeech · 96 说话人</span>
+          </div>
+          <div class="matrix-rows">
+            <div class="matrix-row is-best">
+              <span>Step-Audio-2 (layer=2)</span>
+              <strong class="mono">R@20 99.1% · Top-1 72.4% · AUC 0.973</strong>
+            </div>
+            <div class="matrix-row">
+              <span>Step-Audio-2 Recall@5%FAR</span>
+              <strong class="mono">90.6% · 0.121s/utt · 0.00% leak</strong>
+            </div>
+            <div class="matrix-row">
+              <span>Qwen2-Audio (audio_tower)</span>
+              <strong class="mono">R@20 94.4% · Top-1 61.7% (+6.54pp)</strong>
+            </div>
+            <div class="matrix-row is-muted">
+              <span>Whisper-tiny ASR + Fuzzy</span>
+              <strong class="mono">Top-1 44.4% · AUC 0.703 · R@5% 40.0%</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="matrix-card">
+          <div class="matrix-card__head">
+            <span class="matrix-pill matrix-pill--teal">L3 · 跨语种开放集</span>
+            <span class="matrix-sub">LibriPhrase · 160 说话人 · 难/易负例</span>
+          </div>
+          <div class="matrix-rows">
+            <div class="matrix-row is-best">
+              <span>Step-Audio-2 (Listwise)</span>
+              <strong class="mono">R@20 100% · Top-1 97.8% · AUC 0.987</strong>
+            </div>
+            <div class="matrix-row is-best">
+              <span>Qwen2-Audio (Listwise)</span>
+              <strong class="mono">R@20 97.8% · Top-1 90.6% · AUC 0.942</strong>
+            </div>
+            <div class="matrix-row">
+              <span>KV-Cache Parity &amp; Speedup</span>
+              <strong class="mono">3.07× (r=0.99993) · 7.93× (r=1.0000)</strong>
+            </div>
+            <div class="matrix-row is-muted">
+              <span>Whisper-tiny ASR + Fuzzy</span>
+              <strong class="mono">Top-1 73.9% · AUC 0.885 · R@5% 73.3%</strong>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
 
@@ -356,6 +452,6 @@
     <span id="studioToastText">审计台就绪</span>
   </div>
 
-  <script src="static/studio.js?v=apple-20261120" defer></script>
+  <script src="static/studio.js?v=universal-20261124" defer></script>
 </body>
 </html>

@@ -1234,3 +1234,93 @@ input[type="range"]::-webkit-slider-thumb {
     align-items: flex-start;
   }
 }
+
+
+/* 00 / 3-Tier Public Benchmark Matrix Cards */
+.matrix-grid {
+  width: min(1120px, 100%);
+  margin: 34px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.matrix-card {
+  padding: 22px 22px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(29, 29, 31, 0.08);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.matrix-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.matrix-pill {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--blue);
+  background: rgba(0, 113, 227, 0.09);
+}
+
+.matrix-pill--teal {
+  color: var(--teal);
+  background: var(--teal-soft);
+}
+
+.matrix-sub {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.matrix-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.matrix-row {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(29, 29, 31, 0.025);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.matrix-row strong {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.matrix-row.is-best {
+  background: rgba(0, 113, 227, 0.06);
+  border: 1px solid rgba(0, 113, 227, 0.14);
+}
+
+.matrix-row.is-best strong {
+  color: var(--blue);
+}
+
+.matrix-row.is-muted {
+  opacity: 0.72;
+}
+
+@media (max-width: 960px) {
+  .matrix-grid {
+    grid-template-columns: 1fr;
+  }
+}

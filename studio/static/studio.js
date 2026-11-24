@@ -1318,7 +1318,7 @@
     document.getElementById("btnResetDemoData")?.addEventListener("click", () => {
       state.cases = state.builtinCases;
       state.localLoaded = false;
-      document.getElementById("auditSourceBadge").textContent = "实证语料 · 3,244 样本";
+      document.getElementById("auditSourceBadge").textContent = "L1/L2/L3 公开基准 · 双冻结后端";
       document.getElementById("btnResetDemoData").hidden = true;
       renderCaseChips();
       selectCase(0);
@@ -1353,11 +1353,9 @@
       state.builtinCases = state.bundle.cases;
       state.cases = state.bundle.cases;
 
-      const m = state.bundle.meta;
-      document.getElementById("kpiRecall").textContent = `${m.top20_recall_pct.toFixed(1)}%`;
-      document.getElementById("kpiLeak").textContent = `${state.bundle.prefix_audit.P_leak_pct.toFixed(1)}% → ${state.bundle.prefix_audit.C_leak_pct.toFixed(1)}%`;
-      const longBench = state.bundle.kv_cache.benchmarks.find(b => b.id === "long_6.4s");
-      if (longBench) document.getElementById("kpiSpeedup").textContent = `${longBench.speedup.toFixed(2)}×`;
+      document.getElementById("kpiRecall").textContent = "96.2%–100%";
+      document.getElementById("kpiLeak").textContent = "0.00%";
+      document.getElementById("kpiSpeedup").textContent = "3.07× / 7.93×";
 
       renderCaseChips();
       setCutMode("P", false, false);
